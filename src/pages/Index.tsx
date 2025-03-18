@@ -9,6 +9,10 @@ import CodeDisplay from '@/components/CodeDisplay';
 import { v4 as uuidv4 } from 'uuid';
 import { toast } from 'sonner';
 
+// Key for storing chat history in localStorage
+const CHAT_HISTORY_KEY = 'element_designer_chat_history';
+const DESIGN_HISTORY_KEY = 'element_designer_design_history';
+
 const Index = () => {
   const [selectedModel, setSelectedModel] = useState<string>(GroqService.getDefaultModel());
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -18,6 +22,61 @@ const Index = () => {
     css: '',
     javascript: ''
   });
+
+  // Load chat history from localStorage on component mount
+  useEffect(() => {
+    try {
+      const savedMessages = localStorage.getItem(CHAT_HISTORY_KEY);
+      const savedDesign = localStorage.getItem(DESIGN_HISTORY_KEY);
+      
+      if (savedMessages) {
+        const parsedMessages = JSON.parse(savedMessages);
+        // Convert string dates back to Date objects
+        const messagesWithDates = parsedMessages.map((msg: any) => ({
+          ...msg,
+          timestamp: new Date(msg.timestamp)
+        }));
+        setMessages(messagesWithDates);
+      } else {
+        // Add welcome message if no history exists
+        const welcomeMessage: ChatMessage = {
+          id: uuidv4(),
+          content: "Welcome to the AI Element Designer! Tell me what kind of element you'd like to create, and I'll help you design it. For example, you could ask for 'a glossy blue button with hover effects' or 'a responsive card with an image and description'.",
+          sender: 'assistant',
+          timestamp: new Date()
+        };
+        setMessages([welcomeMessage]);
+      }
+      
+      if (savedDesign) {
+        setElementDesign(JSON.parse(savedDesign));
+      }
+    } catch (error) {
+      console.error("Error loading chat history:", error);
+      // If there's an error, just start with the welcome message
+      const welcomeMessage: ChatMessage = {
+        id: uuidv4(),
+        content: "Welcome to the AI Element Designer! Tell me what kind of element you'd like to create, and I'll help you design it. For example, you could ask for 'a glossy blue button with hover effects' or 'a responsive card with an image and description'.",
+        sender: 'assistant',
+        timestamp: new Date()
+      };
+      setMessages([welcomeMessage]);
+    }
+  }, []);
+
+  // Save chat history to localStorage whenever messages change
+  useEffect(() => {
+    if (messages.length > 0) {
+      localStorage.setItem(CHAT_HISTORY_KEY, JSON.stringify(messages));
+    }
+  }, [messages]);
+
+  // Save design history to localStorage whenever design changes
+  useEffect(() => {
+    if (elementDesign.html || elementDesign.css || elementDesign.javascript) {
+      localStorage.setItem(DESIGN_HISTORY_KEY, JSON.stringify(elementDesign));
+    }
+  }, [elementDesign]);
 
   const handleModelChange = (modelId: string) => {
     setSelectedModel(modelId);
@@ -70,7 +129,7 @@ const Index = () => {
         );
         setElementDesign(updatedDesign);
         
-        addMessage("I've updated the element based on your request. Anything else you'd like to change?", 'assistant');
+        addMessage("I've updated the element based on your request. How does it look? Let me know if you'd like any further changes.", 'assistant');
       }
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : "An error occurred";
@@ -83,16 +142,51 @@ const Index = () => {
     }
   };
 
-  // Add welcome message when component mounts
-  useEffect(() => {
-    const welcomeMessage: ChatMessage = {
-      id: uuidv4(),
-      content: "Welcome to the AI Element Designer! Tell me what kind of element you'd like to create, and I'll help you design it. For example, you could ask for 'a glossy blue button with hover effects' or 'a responsive card with an image and description'.",
-      sender: 'assistant',
-      timestamp: new Date()
-    };
-    setMessages([welcomeMessage]);
-  }, []);
+  const handleRebuild = async () => {
+    if (isLoading || messages.length === 0) return;
+    
+    setIsLoading(true);
+    toast.info("Rebuilding your element...");
+    
+    try {
+      // Extract the most relevant user messages to build context
+      const userMessages = messages.filter(msg => msg.sender === 'user');
+      if (userMessages.length === 0) return;
+      
+      // Use the last user message as the primary instruction
+      const lastUserMessage = userMessages[userMessages.length - 1].content;
+      
+      // Generate a new design from scratch
+      const design = await GroqService.generateElementDesign(lastUserMessage, selectedModel);
+      setElementDesign(design);
+      
+      addMessage("I've rebuilt your element from scratch. How does this version look?", 'assistant');
+      toast.success("Element rebuilt successfully!");
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : "An error occurred";
+      toast.error(`Rebuild failed: ${errorMessage}`);
+      console.error("Error rebuilding element:", error);
+      
+      addMessage("I'm sorry, there was an error rebuilding your element. Please try again.", 'assistant');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleFeedback = (messageId: string, isPositive: boolean) => {
+    // Find the message that received feedback
+    const message = messages.find(msg => msg.id === messageId);
+    if (!message) return;
+    
+    if (isPositive) {
+      toast.success("Thanks for your positive feedback!");
+    } else {
+      toast.info("Sorry about that. Try asking for specific changes to improve the design.");
+    }
+    
+    // In a real application, you might want to send this feedback to your backend
+    console.log(`Feedback for message '${message.content}': ${isPositive ? 'positive' : 'negative'}`);
+  };
 
   return (
     <div className="min-h-screen bg-designer-gray px-6 py-8 animate-fade-in">
@@ -111,7 +205,9 @@ const Index = () => {
             <div className="h-[calc(100vh-20rem)]">
               <ChatInterface 
                 messages={messages} 
-                onSendMessage={handleSendMessage} 
+                onSendMessage={handleSendMessage}
+                onRebuild={handleRebuild}
+                onFeedback={handleFeedback}
                 isLoading={isLoading} 
               />
             </div>
