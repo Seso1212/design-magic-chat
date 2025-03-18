@@ -40,11 +40,27 @@ const Index = () => {
     try {
       // Check if this is the first message or a modification request
       if (elementDesign.html === '') {
+        // Display a temporary message while we're generating
+        addMessage("Generating your element design...", 'assistant');
+        
         // Generate new element design
         const design = await GroqService.generateElementDesign(message, selectedModel);
         setElementDesign(design);
         
-        addMessage("I've created that element for you. You can see it in the preview panel. What would you like to change?", 'assistant');
+        // Replace the temporary message with the success message
+        setMessages(prev => {
+          const updated = [...prev];
+          // Remove the last message (which is the temporary one)
+          updated.pop();
+          // Add the success message
+          updated.push({
+            id: uuidv4(),
+            content: "I've created that element for you. You can see it in the preview panel. What would you like to change?",
+            sender: 'assistant',
+            timestamp: new Date()
+          });
+          return updated;
+        });
       } else {
         // Modify existing design
         const updatedDesign = await GroqService.modifyElementDesign(
