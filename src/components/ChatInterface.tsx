@@ -13,6 +13,7 @@ interface ChatInterfaceProps {
   onRebuild: () => void;
   onFeedback: (messageId: string, isPositive: boolean) => void;
   isLoading: boolean;
+  contextLength?: number; // Optional prop to control how many messages to use for context
 }
 
 const ChatInterface: React.FC<ChatInterfaceProps> = ({ 
@@ -20,7 +21,8 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
   onSendMessage, 
   onRebuild,
   onFeedback,
-  isLoading 
+  isLoading,
+  contextLength = 5 // Default to last 5 messages for context
 }) => {
   const [input, setInput] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -37,6 +39,34 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
     if (e.key === 'Enter') {
       handleSendMessage();
     }
+  };
+
+  // Get a short summary of recent conversation for placeholder text
+  const getContextualPlaceholder = () => {
+    if (messages.length <= 1) {
+      return "Describe an element or ask for changes...";
+    }
+    
+    // Find the last user message if there is one
+    const lastUserMessage = [...messages]
+      .reverse()
+      .find(msg => msg.sender === 'user');
+      
+    if (lastUserMessage) {
+      // If the message is about a specific element type
+      if (lastUserMessage.content.toLowerCase().includes('button')) {
+        return "Change the button color or size...";
+      } else if (lastUserMessage.content.toLowerCase().includes('card')) {
+        return "Modify the card layout or style...";
+      } else if (lastUserMessage.content.toLowerCase().includes('form')) {
+        return "Adjust the form fields or validation...";
+      }
+      
+      // Generic continuation prompts
+      return "What would you like to change?";
+    }
+    
+    return "Describe an element or ask for changes...";
   };
 
   useEffect(() => {
@@ -140,7 +170,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="Describe an element or ask for changes..."
+            placeholder={getContextualPlaceholder()}
             className="flex-grow h-10 rounded-xl border-gray-200 focus:border-designer-blue focus:ring-designer-blue"
             disabled={isLoading}
           />

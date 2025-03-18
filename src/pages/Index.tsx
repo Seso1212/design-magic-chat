@@ -12,6 +12,8 @@ import { toast } from 'sonner';
 // Key for storing chat history in localStorage
 const CHAT_HISTORY_KEY = 'element_designer_chat_history';
 const DESIGN_HISTORY_KEY = 'element_designer_design_history';
+// Maximum number of recent messages to use for context
+const CONTEXT_HISTORY_LENGTH = 5;
 
 const Index = () => {
   const [selectedModel, setSelectedModel] = useState<string>(GroqService.getDefaultModel());
@@ -92,18 +94,40 @@ const Index = () => {
     setMessages(prev => [...prev, newMessage]);
   };
 
+  // Get recent conversation context
+  const getConversationContext = (userMessage: string): string => {
+    // Get recent messages, filtering out the welcome message
+    const recentMessages = messages
+      .filter(msg => !msg.content.includes("Welcome to the AI Element Designer"))
+      .slice(-CONTEXT_HISTORY_LENGTH);
+    
+    // Format the context as a conversation
+    let contextString = "Recent conversation context:\n";
+    
+    recentMessages.forEach(msg => {
+      contextString += `${msg.sender === 'user' ? 'User' : 'Assistant'}: ${msg.content}\n`;
+    });
+    
+    contextString += `User: ${userMessage}\n\nUse this context to understand the user's intent, especially if they use short phrases like "make it blue" or "add a shadow".`;
+    
+    return contextString;
+  };
+
   const handleSendMessage = async (message: string) => {
     addMessage(message, 'user');
     setIsLoading(true);
     
     try {
+      // Include conversation context with the user's message
+      const messageWithContext = getConversationContext(message);
+      
       // Check if this is the first message or a modification request
       if (elementDesign.html === '') {
         // Display a temporary message while we're generating
         addMessage("Generating your element design...", 'assistant');
         
-        // Generate new element design
-        const design = await GroqService.generateElementDesign(message, selectedModel);
+        // Generate new element design with context
+        const design = await GroqService.generateElementDesign(messageWithContext, selectedModel);
         setElementDesign(design);
         
         // Replace the temporary message with the success message
@@ -121,10 +145,10 @@ const Index = () => {
           return updated;
         });
       } else {
-        // Modify existing design
+        // Modify existing design with context
         const updatedDesign = await GroqService.modifyElementDesign(
           elementDesign,
-          message,
+          messageWithContext,
           selectedModel
         );
         setElementDesign(updatedDesign);
@@ -156,8 +180,11 @@ const Index = () => {
       // Use the last user message as the primary instruction
       const lastUserMessage = userMessages[userMessages.length - 1].content;
       
-      // Generate a new design from scratch
-      const design = await GroqService.generateElementDesign(lastUserMessage, selectedModel);
+      // Include conversation context for rebuilding
+      const messageWithContext = getConversationContext(lastUserMessage);
+      
+      // Generate a new design from scratch with context
+      const design = await GroqService.generateElementDesign(messageWithContext, selectedModel);
       setElementDesign(design);
       
       addMessage("I've rebuilt your element from scratch. How does this version look?", 'assistant');
@@ -209,6 +236,7 @@ const Index = () => {
                 onRebuild={handleRebuild}
                 onFeedback={handleFeedback}
                 isLoading={isLoading} 
+                contextLength={CONTEXT_HISTORY_LENGTH}
               />
             </div>
           </div>
