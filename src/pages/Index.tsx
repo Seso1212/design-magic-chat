@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { ChatMessage, ElementDesign } from '@/types';
 import { GroqService } from '@/services/GroqService';
@@ -215,6 +214,27 @@ const Index = () => {
     console.log(`Feedback for message '${message.content}': ${isPositive ? 'positive' : 'negative'}`);
   };
 
+  const handleNewChat = () => {
+    // Clear the chat history but keep the welcome message
+    const welcomeMessage: ChatMessage = {
+      id: uuidv4(),
+      content: "Welcome to the AI Element Designer! Tell me what kind of element you'd like to create, and I'll help you design it. For example, you could ask for 'a glossy blue button with hover effects' or 'a responsive card with an image and description'.",
+      sender: 'assistant',
+      timestamp: new Date()
+    };
+    
+    setMessages([welcomeMessage]);
+    
+    // Clear the element design
+    setElementDesign({
+      html: '',
+      css: '',
+      javascript: ''
+    });
+    
+    toast.success("Started a new design session");
+  };
+
   return (
     <div className="min-h-screen bg-designer-gray px-6 py-8 animate-fade-in">
       <div className="max-w-[1600px] mx-auto">
@@ -234,6 +254,7 @@ const Index = () => {
                 messages={messages} 
                 onSendMessage={handleSendMessage}
                 onRebuild={handleRebuild}
+                onNewChat={handleNewChat}
                 onFeedback={handleFeedback}
                 isLoading={isLoading} 
                 contextLength={CONTEXT_HISTORY_LENGTH}
