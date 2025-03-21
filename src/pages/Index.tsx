@@ -6,15 +6,14 @@ import ChatInterface from '@/components/ChatInterface';
 import PreviewPanel from '@/components/PreviewPanel';
 import CodeDisplay from '@/components/CodeDisplay';
 import ChatFeature from '@/components/ChatFeature';
+import ChatAccess from '@/components/ChatAccess';
 import { v4 as uuidv4 } from 'uuid';
 import { toast } from 'sonner';
 import { MessageCircle, Code } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
-// Key for storing chat history in localStorage
 const CHAT_HISTORY_KEY = 'element_designer_chat_history';
 const DESIGN_HISTORY_KEY = 'element_designer_design_history';
-// Maximum number of recent messages to use for context
 const CONTEXT_HISTORY_LENGTH = 5;
 
 const Index = () => {
@@ -28,7 +27,6 @@ const Index = () => {
   });
   const [activeTab, setActiveTab] = useState<'designer' | 'chat'>('designer');
 
-  // Load chat history from localStorage on component mount
   useEffect(() => {
     try {
       const savedMessages = localStorage.getItem(CHAT_HISTORY_KEY);
@@ -36,14 +34,12 @@ const Index = () => {
       
       if (savedMessages) {
         const parsedMessages = JSON.parse(savedMessages);
-        // Convert string dates back to Date objects
         const messagesWithDates = parsedMessages.map((msg: any) => ({
           ...msg,
           timestamp: new Date(msg.timestamp)
         }));
         setMessages(messagesWithDates);
       } else {
-        // Add welcome message if no history exists
         const welcomeMessage: ChatMessage = {
           id: uuidv4(),
           content: "Welcome to the AI Element Designer! Tell me what kind of element you'd like to create, and I'll help you design it. For example, you could ask for 'a glossy blue button with hover effects' or 'a responsive card with an image and description'.",
@@ -58,7 +54,6 @@ const Index = () => {
       }
     } catch (error) {
       console.error("Error loading chat history:", error);
-      // If there's an error, just start with the welcome message
       const welcomeMessage: ChatMessage = {
         id: uuidv4(),
         content: "Welcome to the AI Element Designer! Tell me what kind of element you'd like to create, and I'll help you design it. For example, you could ask for 'a glossy blue button with hover effects' or 'a responsive card with an image and description'.",
@@ -69,14 +64,12 @@ const Index = () => {
     }
   }, []);
 
-  // Save chat history to localStorage whenever messages change
   useEffect(() => {
     if (messages.length > 0) {
       localStorage.setItem(CHAT_HISTORY_KEY, JSON.stringify(messages));
     }
   }, [messages]);
 
-  // Save design history to localStorage whenever design changes
   useEffect(() => {
     if (elementDesign.html || elementDesign.css || elementDesign.javascript) {
       localStorage.setItem(DESIGN_HISTORY_KEY, JSON.stringify(elementDesign));
@@ -97,14 +90,11 @@ const Index = () => {
     setMessages(prev => [...prev, newMessage]);
   };
 
-  // Get recent conversation context
   const getConversationContext = (userMessage: string): string => {
-    // Get recent messages, filtering out the welcome message
     const recentMessages = messages
       .filter(msg => !msg.content.includes("Welcome to the AI Element Designer"))
       .slice(-CONTEXT_HISTORY_LENGTH);
     
-    // Format the context as a conversation
     let contextString = "Recent conversation context:\n";
     
     recentMessages.forEach(msg => {
@@ -121,24 +111,15 @@ const Index = () => {
     setIsLoading(true);
     
     try {
-      // Include conversation context with the user's message
       const messageWithContext = getConversationContext(message);
       
-      // Check if this is the first message or a modification request
       if (elementDesign.html === '') {
-        // Display a temporary message while we're generating
         addMessage("Generating your element design...", 'assistant');
-        
-        // Generate new element design with context
         const design = await GroqService.generateElementDesign(messageWithContext, selectedModel);
         setElementDesign(design);
-        
-        // Replace the temporary message with the success message
         setMessages(prev => {
           const updated = [...prev];
-          // Remove the last message (which is the temporary one)
           updated.pop();
-          // Add the success message
           updated.push({
             id: uuidv4(),
             content: "I've created that element for you. You can see it in the preview panel. What would you like to change?",
@@ -148,7 +129,6 @@ const Index = () => {
           return updated;
         });
       } else {
-        // Modify existing design with context
         const updatedDesign = await GroqService.modifyElementDesign(
           elementDesign,
           messageWithContext,
@@ -176,17 +156,13 @@ const Index = () => {
     toast.info("Rebuilding your element...");
     
     try {
-      // Extract the most relevant user messages to build context
       const userMessages = messages.filter(msg => msg.sender === 'user');
       if (userMessages.length === 0) return;
       
-      // Use the last user message as the primary instruction
       const lastUserMessage = userMessages[userMessages.length - 1].content;
       
-      // Include conversation context for rebuilding
       const messageWithContext = getConversationContext(lastUserMessage);
       
-      // Generate a new design from scratch with context
       const design = await GroqService.generateElementDesign(messageWithContext, selectedModel);
       setElementDesign(design);
       
@@ -204,7 +180,6 @@ const Index = () => {
   };
 
   const handleFeedback = (messageId: string, isPositive: boolean) => {
-    // Find the message that received feedback
     const message = messages.find(msg => msg.id === messageId);
     if (!message) return;
     
@@ -214,7 +189,6 @@ const Index = () => {
       toast.info("Sorry about that. Try asking for specific changes to improve the design.");
     }
     
-    // In a real application, you might want to send this feedback to your backend
     console.log(`Feedback for message '${message.content}': ${isPositive ? 'positive' : 'negative'}`);
   };
 
@@ -281,6 +255,8 @@ const Index = () => {
             </div>
           </div>
         </div>
+        
+        <ChatAccess />
       </div>
     </div>
   );
