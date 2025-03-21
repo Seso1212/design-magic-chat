@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { ChatMessage, ElementDesign } from '@/types';
 import { GroqService } from '@/services/GroqService';
@@ -6,8 +5,11 @@ import ModelSelector from '@/components/ModelSelector';
 import ChatInterface from '@/components/ChatInterface';
 import PreviewPanel from '@/components/PreviewPanel';
 import CodeDisplay from '@/components/CodeDisplay';
+import ChatFeature from '@/components/ChatFeature';
 import { v4 as uuidv4 } from 'uuid';
 import { toast } from 'sonner';
+import { MessageCircle, Code } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 // Key for storing chat history in localStorage
 const CHAT_HISTORY_KEY = 'element_designer_chat_history';
@@ -24,6 +26,7 @@ const Index = () => {
     css: '',
     javascript: ''
   });
+  const [activeTab, setActiveTab] = useState<'designer' | 'chat'>('designer');
 
   // Load chat history from localStorage on component mount
   useEffect(() => {
@@ -226,18 +229,45 @@ const Index = () => {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
           <div className="lg:col-span-4 space-y-6">
             <div className="p-5 bg-white rounded-3xl shadow-sm border border-gray-100">
-              <ModelSelector selectedModel={selectedModel} onModelChange={handleModelChange} />
+              <div className="flex justify-between items-center mb-4">
+                <ModelSelector selectedModel={selectedModel} onModelChange={handleModelChange} />
+                
+                <div className="flex border border-gray-200 rounded-lg overflow-hidden">
+                  <Button
+                    variant={activeTab === 'designer' ? 'default' : 'ghost'}
+                    size="sm"
+                    onClick={() => setActiveTab('designer')}
+                    className={`rounded-r-none ${activeTab === 'designer' ? 'bg-designer-blue text-white' : ''}`}
+                  >
+                    <Code className="h-4 w-4 mr-2" />
+                    Designer
+                  </Button>
+                  <Button
+                    variant={activeTab === 'chat' ? 'default' : 'ghost'}
+                    size="sm"
+                    onClick={() => setActiveTab('chat')}
+                    className={`rounded-l-none ${activeTab === 'chat' ? 'bg-designer-blue text-white' : ''}`}
+                  >
+                    <MessageCircle className="h-4 w-4 mr-2" />
+                    Chat
+                  </Button>
+                </div>
+              </div>
             </div>
             
             <div className="h-[calc(100vh-20rem)]">
-              <ChatInterface 
-                messages={messages} 
-                onSendMessage={handleSendMessage}
-                onRebuild={handleRebuild}
-                onFeedback={handleFeedback}
-                isLoading={isLoading} 
-                contextLength={CONTEXT_HISTORY_LENGTH}
-              />
+              {activeTab === 'designer' ? (
+                <ChatInterface 
+                  messages={messages} 
+                  onSendMessage={handleSendMessage}
+                  onRebuild={handleRebuild}
+                  onFeedback={handleFeedback}
+                  isLoading={isLoading} 
+                  contextLength={CONTEXT_HISTORY_LENGTH}
+                />
+              ) : (
+                <ChatFeature isVisible={true} />
+              )}
             </div>
           </div>
           
