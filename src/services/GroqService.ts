@@ -1,3 +1,4 @@
+
 import { ChatCompletionRequest, ChatCompletionResponse, Message, AIModel, ProjectType, ElementDesign } from "@/types";
 import { toast } from "sonner";
 
@@ -165,7 +166,7 @@ export class GroqService {
         4096
       );
 
-      // Parse the JSON response
+      // Parse the JSON response with enhanced error handling
       try {
         // Clean up the response to handle potential markdown formatting
         let cleanResponse = jsonResponse.trim();
@@ -185,24 +186,55 @@ export class GroqService {
         
         // Look for JSON object if surrounded by other text
         const jsonMatch = cleanResponse.match(/\{[\s\S]*\}/);
-        const jsonString = jsonMatch ? jsonMatch[0] : cleanResponse;
+        if (!jsonMatch) {
+          console.error("Failed to find JSON object in response:", cleanResponse);
+          toast.error("Failed to parse the AI response. Using fallback design.");
+          return { 
+            html: '<div class="error-element">Element could not be generated</div>', 
+            css: '.error-element { padding: 20px; border: 1px solid #ff0000; color: #ff0000; }', 
+            javascript: '' 
+          };
+        }
         
-        const parsedDesign = JSON.parse(jsonString);
+        const jsonString = jsonMatch[0];
+        console.log("Extracted JSON:", jsonString);
         
-        // Ensure all three fields exist, defaulting to empty strings if missing
-        return {
-          html: parsedDesign.html || '',
-          css: parsedDesign.css || '',
-          javascript: parsedDesign.javascript || ''
-        };
+        try {
+          const parsedDesign = JSON.parse(jsonString);
+          
+          // Ensure all three fields exist, defaulting to empty strings if missing
+          return {
+            html: parsedDesign.html || '',
+            css: parsedDesign.css || '',
+            javascript: parsedDesign.javascript || ''
+          };
+        } catch (parseError) {
+          console.error("JSON parse error:", parseError);
+          console.log("Problematic JSON string:", jsonString);
+          toast.error("Failed to parse the AI response. Using fallback design.");
+          return { 
+            html: '<div class="error-element">JSON parsing error</div>', 
+            css: '.error-element { padding: 20px; border: 1px solid #ff0000; color: #ff0000; }', 
+            javascript: '' 
+          };
+        }
       } catch (error) {
-        console.error("Failed to parse element design JSON:", error);
-        toast.error("Failed to parse the AI response. Please try again.");
-        return { html: '', css: '', javascript: '' };
+        console.error("Failed to process element design JSON:", error);
+        toast.error("Failed to parse the AI response. Using fallback design.");
+        return { 
+          html: '<div class="error-element">Processing error</div>', 
+          css: '.error-element { padding: 20px; border: 1px solid #ff0000; color: #ff0000; }', 
+          javascript: '' 
+        };
       }
     } catch (error) {
       console.error("Failed to generate element design:", error);
-      throw error;
+      toast.error(`Failed to generate design: ${error.message}`);
+      return { 
+        html: '<div class="error-element">Generation error</div>', 
+        css: '.error-element { padding: 20px; border: 1px solid #ff0000; color: #ff0000; }', 
+        javascript: '' 
+      };
     }
   }
 
@@ -267,7 +299,7 @@ Please provide the updated code for this element.`
         4096
       );
 
-      // Parse the JSON response (similar to generateElementDesign)
+      // Parse the JSON response with enhanced error handling (similar to generateElementDesign)
       try {
         // Clean up the response to handle potential markdown formatting
         let cleanResponse = jsonResponse.trim();
@@ -287,24 +319,39 @@ Please provide the updated code for this element.`
         
         // Look for JSON object if surrounded by other text
         const jsonMatch = cleanResponse.match(/\{[\s\S]*\}/);
-        const jsonString = jsonMatch ? jsonMatch[0] : cleanResponse;
+        if (!jsonMatch) {
+          console.error("Failed to find JSON object in response:", cleanResponse);
+          toast.error("Failed to parse the AI response. Keeping current design.");
+          return currentDesign;
+        }
         
-        const parsedDesign = JSON.parse(jsonString);
+        const jsonString = jsonMatch[0];
+        console.log("Extracted JSON:", jsonString);
         
-        // Merge with current design, only replacing fields that were provided
-        return {
-          html: parsedDesign.html || currentDesign.html,
-          css: parsedDesign.css || currentDesign.css,
-          javascript: parsedDesign.javascript || currentDesign.javascript
-        };
+        try {
+          const parsedDesign = JSON.parse(jsonString);
+          
+          // Merge with current design, only replacing fields that were provided
+          return {
+            html: parsedDesign.html || currentDesign.html,
+            css: parsedDesign.css || currentDesign.css,
+            javascript: parsedDesign.javascript || currentDesign.javascript
+          };
+        } catch (parseError) {
+          console.error("JSON parse error:", parseError);
+          console.log("Problematic JSON string:", jsonString);
+          toast.error("Failed to parse the AI response. Keeping current design.");
+          return currentDesign;
+        }
       } catch (error) {
-        console.error("Failed to parse modified element design JSON:", error);
-        toast.error("Failed to parse the AI response. Please try again.");
-        return currentDesign; // Return the unchanged design if we can't parse the update
+        console.error("Failed to process modified element design JSON:", error);
+        toast.error("Failed to parse the AI response. Keeping current design.");
+        return currentDesign;
       }
     } catch (error) {
       console.error("Failed to modify element design:", error);
-      throw error;
+      toast.error(`Failed to modify design: ${error.message}`);
+      return currentDesign;
     }
   }
 }
