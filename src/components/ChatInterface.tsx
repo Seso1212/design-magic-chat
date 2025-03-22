@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { ChatMessage } from '@/types';
-import { SendIcon, BotIcon, UserIcon, ThumbsUpIcon, ThumbsDownIcon, RefreshCwIcon, PlusCircleIcon } from 'lucide-react';
+import { SendIcon, BotIcon, UserIcon, RefreshCwIcon, PlusCircleIcon, RotateCcwIcon } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface ChatInterfaceProps {
@@ -12,9 +12,9 @@ interface ChatInterfaceProps {
   onSendMessage: (message: string) => void;
   onRebuild: () => void;
   onNewChat: () => void;
-  onFeedback: (messageId: string, isPositive: boolean) => void;
+  onRestoreCheckpoint: (messageId: string) => void;
   isLoading: boolean;
-  contextLength?: number; // Optional prop to control how many messages to use for context
+  contextLength?: number;
 }
 
 const ChatInterface: React.FC<ChatInterfaceProps> = ({ 
@@ -22,9 +22,9 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
   onSendMessage, 
   onRebuild,
   onNewChat,
-  onFeedback,
+  onRestoreCheckpoint,
   isLoading,
-  contextLength = 5 // Default to last 5 messages for context
+  contextLength = 5
 }) => {
   const [input, setInput] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -154,18 +154,14 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => onFeedback(msg.id, true)}
-                      className="h-8 px-2 text-green-600 hover:text-green-700 hover:bg-green-50"
+                      onClick={() => {
+                        onRestoreCheckpoint(msg.id);
+                        toast.success("Restored to this checkpoint");
+                      }}
+                      className="h-8 px-2 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                      title="Restore to this checkpoint"
                     >
-                      <ThumbsUpIcon className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => onFeedback(msg.id, false)}
-                      className="h-8 px-2 text-red-600 hover:text-red-700 hover:bg-red-50"
-                    >
-                      <ThumbsDownIcon className="h-4 w-4" />
+                      <RotateCcwIcon className="h-4 w-4" />
                     </Button>
                   </div>
                 )}

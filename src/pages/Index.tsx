@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { ChatMessage, ElementDesign } from '@/types';
 import { GroqService } from '@/services/GroqService';
@@ -76,11 +75,17 @@ const initialDesign: ElementDesign = {
 });`
 };
 
+interface CheckpointState {
+  messages: ChatMessage[];
+  design: ElementDesign;
+}
+
 const Index = () => {
   const [selectedModel, setSelectedModel] = useState<string>(GroqService.getDefaultModel());
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [elementDesign, setElementDesign] = useState<ElementDesign>(initialDesign);
+  const [checkpoints, setCheckpoints] = useState<Record<string, CheckpointState>>({});
 
   // Load chat history from localStorage on component mount
   useEffect(() => {
@@ -96,6 +101,18 @@ const Index = () => {
           timestamp: new Date(msg.timestamp)
         }));
         setMessages(messagesWithDates);
+        
+        // Initialize checkpoints from loaded messages
+        const initialCheckpoints: Record<string, CheckpointState> = {};
+        messagesWithDates.forEach((msg: ChatMessage, index: number) => {
+          if (msg.sender === 'assistant') {
+            initialCheckpoints[msg.id] = {
+              messages: messagesWithDates.slice(0, index + 1),
+              design: JSON.parse(savedDesign || JSON.stringify(initialDesign))
+            };
+          }
+        });
+        setCheckpoints(initialCheckpoints);
       } else {
         // Add welcome message if no history exists
         const welcomeMessage: ChatMessage = {
@@ -105,6 +122,15 @@ const Index = () => {
           timestamp: new Date()
         };
         setMessages([welcomeMessage]);
+        
+        // Initialize first checkpoint
+        const initialCheckpointId = welcomeMessage.id;
+        setCheckpoints({
+          [initialCheckpointId]: {
+            messages: [welcomeMessage],
+            design: initialDesign
+          }
+        });
       }
       
       if (savedDesign) {
@@ -120,6 +146,15 @@ const Index = () => {
         timestamp: new Date()
       };
       setMessages([welcomeMessage]);
+      
+      // Initialize first checkpoint
+      const initialCheckpointId = welcomeMessage.id;
+      setCheckpoints({
+        [initialCheckpointId]: {
+          messages: [welcomeMessage],
+          design: initialDesign
+        }
+      });
     }
   }, []);
 
@@ -155,7 +190,22 @@ const Index = () => {
       sender,
       timestamp: new Date()
     };
-    setMessages(prev => [...prev, newMessage]);
+    
+    const newMessages = [...messages, newMessage];
+    setMessages(newMessages);
+    
+    // Create a checkpoint for assistant messages
+    if (sender === 'assistant') {
+      setCheckpoints(prev => ({
+        ...prev,
+        [newMessage.id]: {
+          messages: newMessages,
+          design: {...elementDesign}
+        }
+      }));
+    }
+    
+    return newMessage;
   };
 
   // Get recent conversation context
@@ -172,7 +222,7 @@ const Index = () => {
       contextString += `${msg.sender === 'user' ? 'User' : 'Assistant'}: ${msg.content}\n`;
     });
     
-    contextString += `User: ${userMessage}\n\nUse this context to understand the user's intent, especially if they use short phrases like "make it blue" or "add a shadow".`;
+    contextString += `User: ${userMessage}\n\nUse this context to understand the user's intent, especially if they use short phrases like "make it blue" or "add a shadow". If the user's request is unclear or ambiguous, ask clarifying questions instead of making assumptions.`;
     
     return contextString;
   };
@@ -184,6 +234,15 @@ const Index = () => {
     try {
       // Include conversation context with the user's message
       const messageWithContext = getConversationContext(message);
+      
+      // If the message is very short or ambiguous, consider asking for clarification
+      if (message.trim().length < 5 || message.split(' ').length < 2) {
+        // Simple heuristic for potentially ambiguous messages
+        const clarificationMessage = "Could you provide more details about what you'd like me to do? Your request seems brief, and I want to make sure I understand correctly.";
+        addMessage(clarificationMessage, 'assistant');
+        setIsLoading(false);
+        return;
+      }
       
       // Check if this is the first message or a modification request
       if (!elementDesign.html && !elementDesign.css && !elementDesign.javascript) {
@@ -200,12 +259,23 @@ const Index = () => {
           // Remove the last message (which is the temporary one)
           updated.pop();
           // Add the success message
-          updated.push({
+          const successMessage = {
             id: uuidv4(),
             content: "I've created that element for you. You can see it in the preview panel and edit the code directly. What would you like to change?",
-            sender: 'assistant',
+            sender: 'assistant' as const,
             timestamp: new Date()
-          });
+          };
+          updated.push(successMessage);
+          
+          // Create a checkpoint for this state
+          setCheckpoints(prevCheckpoints => ({
+            ...prevCheckpoints,
+            [successMessage.id]: {
+              messages: updated,
+              design: design
+            }
+          }));
+          
           return updated;
         });
       } else {
@@ -217,7 +287,7 @@ const Index = () => {
         );
         setElementDesign(updatedDesign);
         
-        addMessage("I've updated the element based on your request. You can continue editing the code directly or ask for more changes.", 'assistant');
+        const responseMessage = addMessage("I've updated the element based on your request. You can continue editing the code directly or ask for more changes.", 'assistant');
       }
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : "An error occurred";
@@ -251,7 +321,7 @@ const Index = () => {
       const design = await GroqService.generateElementDesign(messageWithContext, selectedModel);
       setElementDesign(design);
       
-      addMessage("I've rebuilt your element from scratch. How does this version look?", 'assistant');
+      const responseMessage = addMessage("I've rebuilt your element from scratch. How does this version look?", 'assistant');
       toast.success("Element rebuilt successfully!");
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : "An error occurred";
@@ -264,19 +334,17 @@ const Index = () => {
     }
   };
 
-  const handleFeedback = (messageId: string, isPositive: boolean) => {
-    // Find the message that received feedback
-    const message = messages.find(msg => msg.id === messageId);
-    if (!message) return;
-    
-    if (isPositive) {
-      toast.success("Thanks for your positive feedback!");
-    } else {
-      toast.info("Sorry about that. Try asking for specific changes to improve the design.");
+  const handleRestoreCheckpoint = (messageId: string) => {
+    const checkpoint = checkpoints[messageId];
+    if (!checkpoint) {
+      toast.error("Checkpoint not found");
+      return;
     }
     
-    // In a real application, you might want to send this feedback to your backend
-    console.log(`Feedback for message '${message.content}': ${isPositive ? 'positive' : 'negative'}`);
+    // Restore the messages and design state from the checkpoint
+    setMessages(checkpoint.messages);
+    setElementDesign(checkpoint.design);
+    toast.success("Restored to checkpoint");
   };
 
   const handleNewChat = () => {
@@ -292,6 +360,14 @@ const Index = () => {
     
     // Reset to initial design
     setElementDesign(initialDesign);
+    
+    // Reset checkpoints
+    setCheckpoints({
+      [welcomeMessage.id]: {
+        messages: [welcomeMessage],
+        design: initialDesign
+      }
+    });
     
     toast.success("Started a new design session");
   };
@@ -319,7 +395,7 @@ const Index = () => {
                 onSendMessage={handleSendMessage}
                 onRebuild={handleRebuild}
                 onNewChat={handleNewChat}
-                onFeedback={handleFeedback}
+                onRestoreCheckpoint={handleRestoreCheckpoint}
                 isLoading={isLoading} 
                 contextLength={CONTEXT_HISTORY_LENGTH}
               />
