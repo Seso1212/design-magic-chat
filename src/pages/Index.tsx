@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { ChatMessage, ElementDesign } from '@/types';
 import { GroqService } from '@/services/GroqService';
@@ -15,15 +16,71 @@ const DESIGN_HISTORY_KEY = 'element_designer_design_history';
 // Maximum number of recent messages to use for context
 const CONTEXT_HISTORY_LENGTH = 5;
 
+// Sample initial design
+const initialDesign: ElementDesign = {
+  html: `<div class="modern-card">
+  <h2 class="card-title">Welcome</h2>
+  <p class="card-text">This is a sample element. Edit the code or ask the AI to modify it!</p>
+  <button class="card-button">Click Me</button>
+</div>`,
+  css: `.modern-card {
+  padding: 2rem;
+  border-radius: 1rem;
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: 0 8px 32px rgba(31, 38, 135, 0.1);
+  backdrop-filter: blur(4px);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  max-width: 400px;
+  margin: 0 auto;
+  text-align: center;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.modern-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 12px 40px rgba(31, 38, 135, 0.15);
+}
+
+.card-title {
+  font-size: 1.8rem;
+  margin-bottom: 1rem;
+  color: #8B5CF6;
+  font-weight: 600;
+}
+
+.card-text {
+  color: #4B5563;
+  line-height: 1.6;
+  margin-bottom: 1.5rem;
+}
+
+.card-button {
+  background-color: #8B5CF6;
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 9999px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.card-button:hover {
+  background-color: #7C3AED;
+}`,
+  javascript: `document.querySelector('.card-button').addEventListener('click', function() {
+  this.textContent = 'Clicked!';
+  setTimeout(() => {
+    this.textContent = 'Click Me';
+  }, 1000);
+});`
+};
+
 const Index = () => {
   const [selectedModel, setSelectedModel] = useState<string>(GroqService.getDefaultModel());
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [elementDesign, setElementDesign] = useState<ElementDesign>({
-    html: '',
-    css: '',
-    javascript: ''
-  });
+  const [elementDesign, setElementDesign] = useState<ElementDesign>(initialDesign);
 
   // Load chat history from localStorage on component mount
   useEffect(() => {
@@ -43,7 +100,7 @@ const Index = () => {
         // Add welcome message if no history exists
         const welcomeMessage: ChatMessage = {
           id: uuidv4(),
-          content: "Welcome to the AI Element Designer! I've added a sample card element to get you started. You can ask me to modify it or create something entirely new, like 'a glossy blue button with hover effects' or 'a responsive card with an image and description'.",
+          content: "Welcome to the AI Element Designer! I've added a sample card element to get you started. You can edit the code directly or ask me to modify it. Try changing colors, adding features, or creating something new!",
           sender: 'assistant',
           timestamp: new Date()
         };
@@ -58,7 +115,7 @@ const Index = () => {
       // If there's an error, just start with the welcome message
       const welcomeMessage: ChatMessage = {
         id: uuidv4(),
-        content: "Welcome to the AI Element Designer! I've added a sample card element to get you started. You can ask me to modify it or create something entirely new, like 'a glossy blue button with hover effects' or 'a responsive card with an image and description'.",
+        content: "Welcome to the AI Element Designer! I've added a sample card element to get you started. You can edit the code directly or ask me to modify it. Try changing colors, adding features, or creating something new!",
         sender: 'assistant',
         timestamp: new Date()
       };
@@ -82,6 +139,13 @@ const Index = () => {
 
   const handleModelChange = (modelId: string) => {
     setSelectedModel(modelId);
+  };
+
+  const handleCodeChange = (type: 'html' | 'css' | 'javascript', code: string) => {
+    setElementDesign(prev => ({
+      ...prev,
+      [type]: code
+    }));
   };
 
   const addMessage = (content: string, sender: 'user' | 'assistant') => {
@@ -122,7 +186,7 @@ const Index = () => {
       const messageWithContext = getConversationContext(message);
       
       // Check if this is the first message or a modification request
-      if (elementDesign.html === '') {
+      if (!elementDesign.html && !elementDesign.css && !elementDesign.javascript) {
         // Display a temporary message while we're generating
         addMessage("Generating your element design...", 'assistant');
         
@@ -138,7 +202,7 @@ const Index = () => {
           // Add the success message
           updated.push({
             id: uuidv4(),
-            content: "I've created that element for you. You can see it in the preview panel. What would you like to change?",
+            content: "I've created that element for you. You can see it in the preview panel and edit the code directly. What would you like to change?",
             sender: 'assistant',
             timestamp: new Date()
           });
@@ -153,7 +217,7 @@ const Index = () => {
         );
         setElementDesign(updatedDesign);
         
-        addMessage("I've updated the element based on your request. How does it look? Let me know if you'd like any further changes.", 'assistant');
+        addMessage("I've updated the element based on your request. You can continue editing the code directly or ask for more changes.", 'assistant');
       }
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : "An error occurred";
@@ -219,19 +283,15 @@ const Index = () => {
     // Clear the chat history but keep the welcome message
     const welcomeMessage: ChatMessage = {
       id: uuidv4(),
-      content: "Welcome to the AI Element Designer! I've added a sample card element to get you started. You can ask me to modify it or create something entirely new, like 'a glossy blue button with hover effects' or 'a responsive card with an image and description'.",
+      content: "Welcome to the AI Element Designer! I've added a sample card element to get you started. You can edit the code directly or ask me to modify it. Try changing colors, adding features, or creating something new!",
       sender: 'assistant',
       timestamp: new Date()
     };
     
     setMessages([welcomeMessage]);
     
-    // Clear the element design
-    setElementDesign({
-      html: '',
-      css: '',
-      javascript: ''
-    });
+    // Reset to initial design
+    setElementDesign(initialDesign);
     
     toast.success("Started a new design session");
   };
@@ -272,7 +332,11 @@ const Index = () => {
             </div>
             
             <div className="h-[calc(50vh-6rem)]">
-              <CodeDisplay design={elementDesign} />
+              <CodeDisplay 
+                design={elementDesign} 
+                onCodeChange={handleCodeChange}
+                readOnly={false}
+              />
             </div>
           </div>
         </div>
