@@ -14,7 +14,7 @@
     --popover: 0 0% 100%;
     --popover-foreground: 222.2 84% 4.9%;
 
-    --primary: 210 100% 50%;
+    --primary: 266 100% 64%; /* Purple primary */
     --primary-foreground: 210 40% 98%;
 
     --secondary: 210 40% 96.1%;
@@ -33,7 +33,7 @@
     --input: 214.3 31.8% 91.4%;
     --ring: 221.2 83.2% 53.3%;
 
-    --radius: 0.5rem;
+    --radius: 0.75rem; /* Slightly larger radius for modern look */
 
     --sidebar-background: 0 0% 98%;
     --sidebar-foreground: 240 5.3% 26.1%;
@@ -97,22 +97,34 @@
 
 @layer components {
   .designer-button {
-    @apply bg-designer-blue text-white font-medium px-5 py-2 rounded-full transition-all duration-300 hover:bg-opacity-90 active:scale-95;
+    @apply bg-designer-purple text-white font-medium px-5 py-2 rounded-full transition-all duration-300 hover:bg-opacity-90 active:scale-95 hover:shadow-md;
   }
 
   .designer-card {
-    @apply bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden;
+    @apply bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden hover:shadow-card-hover transition-shadow duration-300;
   }
 
   .glass-panel {
-    @apply bg-designer-glass backdrop-blur-md border border-white/30 rounded-2xl shadow-sm;
+    @apply bg-designer-glass backdrop-blur-md border border-white/30 rounded-2xl shadow-glass;
   }
   
   .code-tab {
-    @apply px-4 py-2 font-medium transition-all duration-200 hover:text-designer-blue cursor-pointer;
+    @apply px-4 py-2 font-medium transition-all duration-200 hover:text-designer-purple cursor-pointer;
   }
   
   .code-tab.active {
-    @apply text-designer-blue border-b-2 border-designer-blue;
+    @apply text-designer-purple border-b-2 border-designer-purple;
+  }
+
+  .modern-input {
+    @apply px-4 py-3 rounded-xl bg-white border border-gray-200 focus:ring-2 focus:ring-designer-purple focus:border-transparent transition-all duration-200;
+  }
+
+  .modern-card {
+    @apply bg-white rounded-xl p-6 shadow-card border border-gray-100 hover:shadow-card-hover transition-all duration-300;
+  }
+
+  .gradient-text {
+    @apply bg-clip-text text-transparent bg-gradient-purple;
   }
 }

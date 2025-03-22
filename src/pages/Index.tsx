@@ -7,6 +7,7 @@ import PreviewPanel from '@/components/PreviewPanel';
 import CodeDisplay from '@/components/CodeDisplay';
 import { v4 as uuidv4 } from 'uuid';
 import { toast } from 'sonner';
+import { Sparkles } from 'lucide-react';
 
 // Key for storing chat history in localStorage
 const CHAT_HISTORY_KEY = 'element_designer_chat_history';
@@ -236,16 +237,19 @@ const Index = () => {
   };
 
   return (
-    <div className="min-h-screen bg-designer-gray px-6 py-8 animate-fade-in">
+    <div className="min-h-screen bg-gradient-soft px-6 py-8 animate-fade-in">
       <div className="max-w-[1600px] mx-auto">
         <header className="mb-8 text-center animate-slide-up">
-          <h1 className="text-3xl font-bold mb-2">AI Element Design Builder</h1>
+          <div className="inline-flex items-center justify-center gap-2 mb-2">
+            <Sparkles className="h-6 w-6 text-designer-purple animate-pulse-subtle" />
+            <h1 className="text-3xl font-bold gradient-text bg-gradient-purple">AI Element Design Builder</h1>
+          </div>
           <p className="text-muted-foreground">Create beautiful web elements with AI assistance</p>
         </header>
         
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
           <div className="lg:col-span-4 space-y-6">
-            <div className="p-5 bg-white rounded-3xl shadow-sm border border-gray-100">
+            <div className="p-5 glass-panel backdrop-blur-md bg-white/80 rounded-3xl shadow-glass border border-white/50">
               <ModelSelector selectedModel={selectedModel} onModelChange={handleModelChange} />
             </div>
             
