@@ -21,12 +21,72 @@ const PreviewPanel: React.FC<PreviewPanelProps> = ({ design }) => {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
+  // Default code samples for new users
+  const defaultHTML = `<div class="modern-card">
+  <h2 class="card-title">Welcome</h2>
+  <p class="card-text">This is a sample element. Ask the AI to modify it or create something new!</p>
+  <button class="card-button">Click Me</button>
+</div>`;
+
+  const defaultCSS = `.modern-card {
+  padding: 2rem;
+  border-radius: 1rem;
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: 0 8px 32px rgba(31, 38, 135, 0.1);
+  backdrop-filter: blur(4px);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  max-width: 400px;
+  margin: 0 auto;
+  text-align: center;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.modern-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 12px 40px rgba(31, 38, 135, 0.15);
+}
+
+.card-title {
+  font-size: 1.8rem;
+  margin-bottom: 1rem;
+  color: #8B5CF6;
+  font-weight: 600;
+}
+
+.card-text {
+  color: #4B5563;
+  line-height: 1.6;
+  margin-bottom: 1.5rem;
+}
+
+.card-button {
+  background-color: #8B5CF6;
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 9999px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.card-button:hover {
+  background-color: #7C3AED;
+}`;
+
+  const defaultJS = `document.querySelector('.card-button').addEventListener('click', function() {
+  this.textContent = 'Clicked!';
+  setTimeout(() => {
+    this.textContent = 'Click Me';
+  }, 1000);
+});`;
+
   // Function to update iframe with current design
   const updateIframeContent = (iframe: HTMLIFrameElement | null) => {
     if (!iframe) return;
     
     try {
-      // Create a blob URL from our HTML content
+      // Determine if we should use default samples or user design
       const htmlContent = `
         <!DOCTYPE html>
         <html lang="en">
@@ -46,13 +106,13 @@ const PreviewPanel: React.FC<PreviewPanelProps> = ({ design }) => {
               background-color: #fbfbfd;
             }
             
-            ${design.css}
+            ${design.css || defaultCSS}
           </style>
         </head>
         <body>
-          ${design.html || '<div class="placeholder">Your element will appear here. Try asking for something like "a glossy blue button with hover effects".</div>'}
+          ${design.html || defaultHTML}
           <script>
-            ${design.javascript}
+            ${design.javascript || defaultJS}
           </script>
         </body>
         </html>

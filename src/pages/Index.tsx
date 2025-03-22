@@ -43,7 +43,7 @@ const Index = () => {
         // Add welcome message if no history exists
         const welcomeMessage: ChatMessage = {
           id: uuidv4(),
-          content: "Welcome to the AI Element Designer! Tell me what kind of element you'd like to create, and I'll help you design it. For example, you could ask for 'a glossy blue button with hover effects' or 'a responsive card with an image and description'.",
+          content: "Welcome to the AI Element Designer! I've added a sample card element to get you started. You can ask me to modify it or create something entirely new, like 'a glossy blue button with hover effects' or 'a responsive card with an image and description'.",
           sender: 'assistant',
           timestamp: new Date()
         };
@@ -58,7 +58,7 @@ const Index = () => {
       // If there's an error, just start with the welcome message
       const welcomeMessage: ChatMessage = {
         id: uuidv4(),
-        content: "Welcome to the AI Element Designer! Tell me what kind of element you'd like to create, and I'll help you design it. For example, you could ask for 'a glossy blue button with hover effects' or 'a responsive card with an image and description'.",
+        content: "Welcome to the AI Element Designer! I've added a sample card element to get you started. You can ask me to modify it or create something entirely new, like 'a glossy blue button with hover effects' or 'a responsive card with an image and description'.",
         sender: 'assistant',
         timestamp: new Date()
       };
@@ -219,7 +219,7 @@ const Index = () => {
     // Clear the chat history but keep the welcome message
     const welcomeMessage: ChatMessage = {
       id: uuidv4(),
-      content: "Welcome to the AI Element Designer! Tell me what kind of element you'd like to create, and I'll help you design it. For example, you could ask for 'a glossy blue button with hover effects' or 'a responsive card with an image and description'.",
+      content: "Welcome to the AI Element Designer! I've added a sample card element to get you started. You can ask me to modify it or create something entirely new, like 'a glossy blue button with hover effects' or 'a responsive card with an image and description'.",
       sender: 'assistant',
       timestamp: new Date()
     };
