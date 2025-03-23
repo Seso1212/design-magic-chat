@@ -1,4 +1,3 @@
-
 import { ChatCompletionRequest, ChatCompletionResponse, Message, AIModel, ProjectType, ElementDesign } from "@/types";
 import { toast } from "sonner";
 
@@ -354,4 +353,284 @@ Please provide the updated code for this element.`
       return currentDesign;
     }
   }
+
+  public static async generateAppFiles(
+    description: string,
+    model: string = this.getDefaultModel()
+  ): Promise<AppProject> {
+    const systemPrompt: Message = {
+      role: "system",
+      content: `You are an expert software engineer and app architect. Given a description of an app, generate a complete project with all necessary files.
+      
+      Follow these guidelines:
+      1. Create all necessary files for a functional app
+      2. Make sure files are properly linked to each other
+      3. Create a main entry file that imports and uses other modules
+      4. Use modern JavaScript/TypeScript best practices
+      5. Ensure the app structure is clean and well-organized
+      6. Add appropriate comments to explain the code
+      7. Return the files in JSON format with clear file names and paths
+      
+      Create a complete, functional app based on the user's description.
+      
+      Format your response as a JSON object with the following structure:
+      {
+        "name": "app-name",
+        "description": "Brief description of the app",
+        "entryFile": "src/main.js",
+        "files": [
+          {
+            "name": "src/main.js",
+            "content": "console.log('Hello World');",
+            "type": "js"
+          },
+          {
+            "name": "src/components/Button.jsx",
+            "content": "export default function Button() { return <button>Click me</button>; }",
+            "type": "jsx"
+          }
+        ]
+      }
+      
+      Ensure all files are properly linked with correct import statements.`
+    };
+
+    const userPrompt: Message = {
+      role: "user",
+      content: `Create an app with these requirements: ${description}`
+    };
+
+    try {
+      const jsonResponse = await this.generateCompletion(
+        [systemPrompt, userPrompt],
+        model,
+        0.7,
+        8192
+      );
+
+      // Parse the JSON response with enhanced error handling
+      try {
+        // Clean up the response to handle potential markdown formatting
+        let cleanResponse = jsonResponse.trim();
+        
+        // If response contains markdown code blocks, extract just the JSON
+        if (cleanResponse.includes('```json')) {
+          const match = cleanResponse.match(/```json\s*([\s\S]*?)\s*```/);
+          if (match && match[1]) {
+            cleanResponse = match[1].trim();
+          }
+        } else if (cleanResponse.includes('```')) {
+          const match = cleanResponse.match(/```\s*([\s\S]*?)\s*```/);
+          if (match && match[1]) {
+            cleanResponse = match[1].trim();
+          }
+        }
+        
+        // Look for JSON object if surrounded by other text
+        const jsonMatch = cleanResponse.match(/\{[\s\S]*\}/);
+        if (!jsonMatch) {
+          console.error("Failed to find JSON object in response:", cleanResponse);
+          toast.error("Failed to parse the AI response. Using fallback project.");
+          return { 
+            name: "error-app", 
+            description: "App could not be generated", 
+            files: [
+              {
+                name: "main.js",
+                content: "console.log('Error generating app');",
+                type: "js"
+              }
+            ],
+            entryFile: "main.js"
+          };
+        }
+        
+        const jsonString = jsonMatch[0];
+        console.log("Extracted JSON:", jsonString);
+        
+        try {
+          const parsedProject = JSON.parse(jsonString);
+          
+          // Ensure all required fields exist
+          return {
+            name: parsedProject.name || "new-app",
+            description: parsedProject.description || "Generated app",
+            files: parsedProject.files || [],
+            entryFile: parsedProject.entryFile || (parsedProject.files[0]?.name || "index.js")
+          };
+        } catch (parseError) {
+          console.error("JSON parse error:", parseError);
+          console.log("Problematic JSON string:", jsonString);
+          toast.error("Failed to parse the AI response. Using fallback project.");
+          return { 
+            name: "error-app", 
+            description: "JSON parsing error", 
+            files: [
+              {
+                name: "main.js",
+                content: "console.log('Error parsing JSON');",
+                type: "js"
+              }
+            ],
+            entryFile: "main.js"
+          };
+        }
+      } catch (error) {
+        console.error("Failed to process app files JSON:", error);
+        toast.error("Failed to parse the AI response. Using fallback project.");
+        return { 
+          name: "error-app", 
+          description: "Processing error", 
+          files: [
+            {
+              name: "main.js",
+              content: "console.log('Error processing response');",
+              type: "js"
+            }
+          ],
+          entryFile: "main.js"
+        };
+      }
+    } catch (error) {
+      console.error("Failed to generate app files:", error);
+      toast.error(`Failed to generate app: ${error.message}`);
+      return { 
+        name: "error-app", 
+        description: "Generation error", 
+        files: [
+          {
+            name: "main.js",
+            content: "console.log('Error calling AI service');",
+            type: "js"
+          }
+        ],
+        entryFile: "main.js"
+      };
+    }
+  }
+
+  public static async modifyAppFiles(
+    currentProject: AppProject,
+    modification: string,
+    model: string = this.getDefaultModel()
+  ): Promise<AppProject> {
+    const systemPrompt: Message = {
+      role: "system",
+      content: `You are an expert software engineer and app architect. You will be given the current files of a project along with a request to modify it.
+      Make the requested changes while ensuring all files remain properly linked and the app remains functional.
+      
+      Follow these guidelines:
+      1. Preserve existing file structure when possible
+      2. Make sure all files have correct import/export statements
+      3. Update the entry file if needed to maintain app functionality
+      4. When adding new files, ensure they are properly integrated
+      5. Return the complete updated project with all files
+      
+      Format your response as a JSON object with the following structure:
+      {
+        "name": "app-name",
+        "description": "Brief description of the app",
+        "entryFile": "src/main.js",
+        "files": [
+          {
+            "name": "src/main.js",
+            "content": "console.log('Updated content');",
+            "type": "js"
+          },
+          {
+            "name": "src/components/Button.jsx",
+            "content": "export default function Button() { return <button>Updated button</button>; }",
+            "type": "jsx"
+          }
+        ]
+      }
+      
+      Return the complete project after modifications, not just the changed files.`
+    };
+
+    // Format the current project files for the prompt
+    let filesContent = "Current project files:\n\n";
+    currentProject.files.forEach(file => {
+      filesContent += `File: ${file.name} (${file.type})\n`;
+      filesContent += "```\n";
+      filesContent += file.content;
+      filesContent += "\n```\n\n";
+    });
+
+    const userPrompt: Message = {
+      role: "user",
+      content: `${filesContent}\nModification request: ${modification}\n\nPlease provide the updated project files.`
+    };
+
+    try {
+      const jsonResponse = await this.generateCompletion(
+        [systemPrompt, userPrompt],
+        model,
+        0.7,
+        8192
+      );
+
+      // Parse the JSON response with enhanced error handling (similar to generateAppFiles)
+      try {
+        // Clean up the response to handle potential markdown formatting
+        let cleanResponse = jsonResponse.trim();
+        
+        // If response contains markdown code blocks, extract just the JSON
+        if (cleanResponse.includes('```json')) {
+          const match = cleanResponse.match(/```json\s*([\s\S]*?)\s*```/);
+          if (match && match[1]) {
+            cleanResponse = match[1].trim();
+          }
+        } else if (cleanResponse.includes('```')) {
+          const match = cleanResponse.match(/```\s*([\s\S]*?)\s*```/);
+          if (match && match[1]) {
+            cleanResponse = match[1].trim();
+          }
+        }
+        
+        // Look for JSON object if surrounded by other text
+        const jsonMatch = cleanResponse.match(/\{[\s\S]*\}/);
+        if (!jsonMatch) {
+          console.error("Failed to find JSON object in response:", cleanResponse);
+          toast.error("Failed to parse the AI response. Keeping current project.");
+          return currentProject;
+        }
+        
+        const jsonString = jsonMatch[0];
+        console.log("Extracted JSON:", jsonString);
+        
+        try {
+          const parsedProject = JSON.parse(jsonString);
+          
+          // Merge with current project, only replacing fields that were provided
+          return {
+            name: parsedProject.name || currentProject.name,
+            description: parsedProject.description || currentProject.description,
+            files: parsedProject.files || currentProject.files,
+            entryFile: parsedProject.entryFile || currentProject.entryFile
+          };
+        } catch (parseError) {
+          console.error("JSON parse error:", parseError);
+          console.log("Problematic JSON string:", jsonString);
+          toast.error("Failed to parse the AI response. Keeping current project.");
+          return currentProject;
+        }
+      } catch (error) {
+        console.error("Failed to process modified app files JSON:", error);
+        toast.error("Failed to parse the AI response. Keeping current project.");
+        return currentProject;
+      }
+    } catch (error) {
+      console.error("Failed to modify app files:", error);
+      toast.error(`Failed to modify app: ${error.message}`);
+      return currentProject;
+    }
+  }
+}
+
+interface AppProject {
+  name: string;
+  description: string;
+  entryFile: string;
+  files: { name: string, content: string, type: string }[];
 }

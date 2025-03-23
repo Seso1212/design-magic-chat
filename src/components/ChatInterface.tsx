@@ -6,6 +6,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { ChatMessage } from '@/types';
 import { SendIcon, BotIcon, UserIcon, RefreshCwIcon, PlusCircleIcon, RotateCcwIcon } from 'lucide-react';
 import { toast } from 'sonner';
+import { Link } from 'react-router-dom';
 
 interface ChatInterfaceProps {
   messages: ChatMessage[];
@@ -46,7 +47,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
   // Get a short summary of recent conversation for placeholder text
   const getContextualPlaceholder = () => {
     if (messages.length <= 1) {
-      return "Describe an element or ask for changes...";
+      return "Describe an app or element you want to create...";
     }
     
     // Find the last user message if there is one
@@ -55,11 +56,11 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
       .find(msg => msg.sender === 'user');
       
     if (lastUserMessage) {
-      // If the message is about a specific element type
+      // If the message is about a specific element or app type
       if (lastUserMessage.content.toLowerCase().includes('button')) {
         return "Change the button color or size...";
-      } else if (lastUserMessage.content.toLowerCase().includes('card')) {
-        return "Modify the card layout or style...";
+      } else if (lastUserMessage.content.toLowerCase().includes('app')) {
+        return "Modify the app functionality or design...";
       } else if (lastUserMessage.content.toLowerCase().includes('form')) {
         return "Adjust the form fields or validation...";
       }
@@ -68,7 +69,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
       return "What would you like to change?";
     }
     
-    return "Describe an element or ask for changes...";
+    return "Describe what you'd like to create...";
   };
 
   useEffect(() => {
@@ -79,14 +80,29 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
     inputRef.current?.focus();
   }, []);
 
+  // Check if we're on the Element Designer or App Generator page
+  const isAppGenerator = window.location.pathname.includes('app-generator');
+
   return (
     <div className="flex flex-col h-full bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden">
       <div className="p-4 border-b border-gray-200 flex items-center justify-between">
         <div className="flex items-center">
           <BotIcon className="w-5 h-5 mr-2 text-designer-blue" />
-          <h2 className="text-lg font-medium">Element Designer</h2>
+          <h2 className="text-lg font-medium">
+            {isAppGenerator ? "App Generator" : "Element Designer"}
+          </h2>
         </div>
         <div className="flex items-center space-x-2">
+          {/* Add link to switch between pages */}
+          <Link to={isAppGenerator ? "/" : "/app-generator"}>
+            <Button
+              variant="outline"
+              size="sm"
+              className="flex items-center gap-1 text-xs"
+            >
+              Switch to {isAppGenerator ? "Element Designer" : "App Generator"}
+            </Button>
+          </Link>
           <Button
             variant="outline"
             size="sm"
@@ -113,8 +129,16 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
           {messages.length === 0 ? (
             <div className="flex items-center justify-center h-full min-h-[200px] text-muted-foreground text-center px-4">
               <div>
-                <p className="mb-2">Describe the element you want to design</p>
-                <p className="text-sm">For example: "Create a glossy blue button with hover effects"</p>
+                <p className="mb-2">
+                  {isAppGenerator 
+                    ? "Describe the app you want to create" 
+                    : "Describe the element you want to design"}
+                </p>
+                <p className="text-sm">
+                  {isAppGenerator
+                    ? "For example: \"Create a todo list app with local storage\""
+                    : "For example: \"Create a glossy blue button with hover effects\""}
+                </p>
               </div>
             </div>
           ) : (
