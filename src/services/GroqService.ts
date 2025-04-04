@@ -438,15 +438,19 @@ Please provide the updated code for this element.`
               {
                 name: "main.js",
                 content: "console.log('Error generating app');",
-                type: "js"
+                type: "js" as AppFileType
               }
             ],
             entryFile: "main.js"
           };
         }
         
-        const jsonString = jsonMatch[0];
+        let jsonString = jsonMatch[0];
         console.log("Extracted JSON:", jsonString);
+        
+        // Sanitize problematic escape sequences
+        jsonString = jsonString.replace(/\\"/g, '"');
+        jsonString = jsonString.replace(/([^\\])\\([^\\/"bfnrtu])/g, '$1\\\\$2');
         
         try {
           const parsedProject = JSON.parse(jsonString);
@@ -465,19 +469,39 @@ Please provide the updated code for this element.`
         } catch (parseError) {
           console.error("JSON parse error:", parseError);
           console.log("Problematic JSON string:", jsonString);
-          toast.error("Failed to parse the AI response. Using fallback project.");
-          return { 
-            name: "error-app", 
-            description: "JSON parsing error", 
-            files: [
-              {
-                name: "main.js",
-                content: "console.log('Error parsing JSON');",
-                type: "js" as AppFileType
-              }
-            ],
-            entryFile: "main.js"
-          };
+          
+          // Attempt to fix common JSON parsing issues
+          try {
+            // Fix unescaped quotes in attribute values (particularly in HTML/JS strings)
+            const fixedString = jsonString.replace(/data-value=\\?"([^"]*?)\\?"/g, 'data-value="$1"');
+            const parsedProject = JSON.parse(fixedString);
+            
+            return {
+              name: parsedProject.name || "new-app",
+              description: parsedProject.description || "JSON recovery worked",
+              files: parsedProject.files.map((file: any) => ({
+                name: file.name,
+                content: file.content,
+                type: file.type as AppFileType
+              })) || [],
+              entryFile: parsedProject.entryFile || (parsedProject.files[0]?.name || "index.js")
+            };
+          } catch (secondaryError) {
+            console.error("Secondary JSON parse attempt failed:", secondaryError);
+            toast.error("Failed to parse the AI response. Using fallback project.");
+            return { 
+              name: "error-app", 
+              description: "JSON parsing error", 
+              files: [
+                {
+                  name: "main.js",
+                  content: "console.log('Error parsing JSON');",
+                  type: "js" as AppFileType
+                }
+              ],
+              entryFile: "main.js"
+            };
+          }
         }
       } catch (error) {
         console.error("Failed to process app files JSON:", error);
@@ -600,8 +624,12 @@ Please provide the updated code for this element.`
           return currentProject;
         }
         
-        const jsonString = jsonMatch[0];
+        let jsonString = jsonMatch[0];
         console.log("Extracted JSON:", jsonString);
+        
+        // Sanitize problematic escape sequences
+        jsonString = jsonString.replace(/\\"/g, '"');
+        jsonString = jsonString.replace(/([^\\])\\([^\\/"bfnrtu])/g, '$1\\\\$2');
         
         try {
           const parsedProject = JSON.parse(jsonString);
@@ -622,8 +650,28 @@ Please provide the updated code for this element.`
         } catch (parseError) {
           console.error("JSON parse error:", parseError);
           console.log("Problematic JSON string:", jsonString);
-          toast.error("Failed to parse the AI response. Keeping current project.");
-          return currentProject;
+          
+          // Attempt to fix common JSON parsing issues
+          try {
+            // Fix unescaped quotes in attribute values (particularly in HTML/JS strings)
+            const fixedString = jsonString.replace(/data-value=\\?"([^"]*?)\\?"/g, 'data-value="$1"');
+            const parsedProject = JSON.parse(fixedString);
+            
+            return {
+              name: parsedProject.name || currentProject.name,
+              description: parsedProject.description || currentProject.description,
+              files: parsedProject.files ? parsedProject.files.map((file: any) => ({
+                name: file.name,
+                content: file.content,
+                type: file.type as AppFileType
+              })) : currentProject.files,
+              entryFile: parsedProject.entryFile || currentProject.entryFile
+            };
+          } catch (secondaryError) {
+            console.error("Secondary JSON parse attempt failed:", secondaryError);
+            toast.error("Failed to parse the AI response. Keeping current project.");
+            return currentProject;
+          }
         }
       } catch (error) {
         console.error("Failed to process modified app files JSON:", error);
