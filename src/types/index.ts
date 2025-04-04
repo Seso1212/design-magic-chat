@@ -1,3 +1,4 @@
+
 export interface Message {
   role: "system" | "user" | "assistant";
   content: string;
@@ -49,10 +50,12 @@ export interface ChatMessage {
   timestamp: Date;
 }
 
+export type AppFileType = "js" | "jsx" | "ts" | "tsx" | "css" | "html" | "json" | "md";
+
 export interface AppFile {
   name: string;
   content: string;
-  type: "js" | "jsx" | "ts" | "tsx" | "css" | "html" | "json" | "md";
+  type: AppFileType;
 }
 
 export interface AppProject {

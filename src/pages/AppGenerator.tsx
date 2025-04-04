@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ChatMessage, AppProject } from '@/types';
+import { ChatMessage, AppProject, AppFile, AppFileType } from '@/types';
 import { GroqService } from '@/services/GroqService';
 import ModelSelector from '@/components/ModelSelector';
 import ChatInterface from '@/components/ChatInterface';
@@ -9,13 +9,10 @@ import { v4 as uuidv4 } from 'uuid';
 import { toast } from 'sonner';
 import { Sparkles } from 'lucide-react';
 
-// Key for storing chat history in localStorage
 const CHAT_HISTORY_KEY = 'app_generator_chat_history';
 const PROJECT_HISTORY_KEY = 'app_generator_project_history';
-// Maximum number of recent messages to use for context
 const CONTEXT_HISTORY_LENGTH = 5;
 
-// Sample initial project
 const initialProject: AppProject = {
   name: "Hello World App",
   description: "A simple starter app to demonstrate the app generator",
@@ -50,7 +47,7 @@ document.addEventListener('DOMContentLoaded', function() {
   app.appendChild(content);
   app.appendChild(button);
 });`,
-      type: "js"
+      type: "js" as AppFileType
     },
     {
       name: "styles.css",
@@ -101,7 +98,7 @@ h1 {
 .main-button:hover {
   background-color: #7C3AED;
 }`,
-      type: "css"
+      type: "css" as AppFileType
     },
     {
       name: "index.html",
@@ -118,7 +115,7 @@ h1 {
   <script src="app.js"></script>
 </body>
 </html>`,
-      type: "html"
+      type: "html" as AppFileType
     }
   ]
 };
@@ -135,7 +132,6 @@ const AppGenerator: React.FC = () => {
   const [project, setProject] = useState<AppProject>(initialProject);
   const [checkpoints, setCheckpoints] = useState<Record<string, CheckpointState>>({});
 
-  // Load chat history from localStorage on component mount
   useEffect(() => {
     try {
       const savedMessages = localStorage.getItem(CHAT_HISTORY_KEY);
@@ -143,14 +139,12 @@ const AppGenerator: React.FC = () => {
       
       if (savedMessages) {
         const parsedMessages = JSON.parse(savedMessages);
-        // Convert string dates back to Date objects
         const messagesWithDates = parsedMessages.map((msg: any) => ({
           ...msg,
           timestamp: new Date(msg.timestamp)
         }));
         setMessages(messagesWithDates);
         
-        // Initialize checkpoints from loaded messages
         const initialCheckpoints: Record<string, CheckpointState> = {};
         messagesWithDates.forEach((msg: ChatMessage, index: number) => {
           if (msg.sender === 'assistant') {
@@ -162,7 +156,6 @@ const AppGenerator: React.FC = () => {
         });
         setCheckpoints(initialCheckpoints);
       } else {
-        // Add welcome message if no history exists
         const welcomeMessage: ChatMessage = {
           id: uuidv4(),
           content: "Welcome to the AI App Generator! I've added a sample app to get you started. You can edit the code directly or ask me to modify it. Try asking for a specific type of app or request changes to the current one!",
@@ -171,7 +164,6 @@ const AppGenerator: React.FC = () => {
         };
         setMessages([welcomeMessage]);
         
-        // Initialize first checkpoint
         const initialCheckpointId = welcomeMessage.id;
         setCheckpoints({
           [initialCheckpointId]: {
@@ -186,7 +178,6 @@ const AppGenerator: React.FC = () => {
       }
     } catch (error) {
       console.error("Error loading chat history:", error);
-      // If there's an error, just start with the welcome message
       const welcomeMessage: ChatMessage = {
         id: uuidv4(),
         content: "Welcome to the AI App Generator! I've added a sample app to get you started. You can edit the code directly or ask me to modify it. Try asking for a specific type of app or request changes to the current one!",
@@ -195,7 +186,6 @@ const AppGenerator: React.FC = () => {
       };
       setMessages([welcomeMessage]);
       
-      // Initialize first checkpoint
       const initialCheckpointId = welcomeMessage.id;
       setCheckpoints({
         [initialCheckpointId]: {
@@ -206,14 +196,12 @@ const AppGenerator: React.FC = () => {
     }
   }, []);
 
-  // Save chat history to localStorage whenever messages change
   useEffect(() => {
     if (messages.length > 0) {
       localStorage.setItem(CHAT_HISTORY_KEY, JSON.stringify(messages));
     }
   }, [messages]);
 
-  // Save project to localStorage whenever it changes
   useEffect(() => {
     if (project.files.length > 0) {
       localStorage.setItem(PROJECT_HISTORY_KEY, JSON.stringify(project));
@@ -239,28 +227,26 @@ const AppGenerator: React.FC = () => {
     const newMessages = [...messages, newMessage];
     setMessages(newMessages);
     
-    // Create a checkpoint for assistant messages
     if (sender === 'assistant') {
+      const checkpoint: CheckpointState = {
+        messages: newMessages,
+        project: {...project}
+      };
+      
       setCheckpoints(prev => ({
         ...prev,
-        [newMessage.id]: {
-          messages: newMessages,
-          project: {...project}
-        }
+        [newMessage.id]: checkpoint
       }));
     }
     
     return newMessage;
   };
 
-  // Get recent conversation context
   const getConversationContext = (userMessage: string): string => {
-    // Get recent messages, filtering out the welcome message
     const recentMessages = messages
       .filter(msg => !msg.content.includes("Welcome to the AI App Generator"))
       .slice(-CONTEXT_HISTORY_LENGTH);
     
-    // Format the context as a conversation
     let contextString = "Recent conversation context:\n";
     
     recentMessages.forEach(msg => {
@@ -277,33 +263,24 @@ const AppGenerator: React.FC = () => {
     setIsLoading(true);
     
     try {
-      // Include conversation context with the user's message
       const messageWithContext = getConversationContext(message);
       
-      // If the message is very short or ambiguous, consider asking for clarification
       if (message.trim().length < 5 || message.split(' ').length < 2) {
-        // Simple heuristic for potentially ambiguous messages
         const clarificationMessage = "Could you provide more details about what you'd like me to do? Your request seems brief, and I want to make sure I understand correctly.";
         addMessage(clarificationMessage, 'assistant');
         setIsLoading(false);
         return;
       }
       
-      // Check if this is the first message or a modification request
       if (project.files.length === 0 || message.toLowerCase().includes("create new") || message.toLowerCase().includes("generate new")) {
-        // Display a temporary message while we're generating
         addMessage("Generating your app...", 'assistant');
         
-        // Generate new app with context
         const generatedProject = await GroqService.generateAppFiles(messageWithContext, selectedModel);
         setProject(generatedProject);
         
-        // Replace the temporary message with the success message
         setMessages(prev => {
           const updated = [...prev];
-          // Remove the last message (which is the temporary one)
           updated.pop();
-          // Add the success message
           const successMessage = {
             id: uuidv4(),
             content: `I've created a ${generatedProject.name} app for you. You can see it in the preview panel and edit the code directly. What would you like to change?`,
@@ -312,7 +289,6 @@ const AppGenerator: React.FC = () => {
           };
           updated.push(successMessage);
           
-          // Create a checkpoint for this state
           setCheckpoints(prevCheckpoints => ({
             ...prevCheckpoints,
             [successMessage.id]: {
@@ -324,7 +300,6 @@ const AppGenerator: React.FC = () => {
           return updated;
         });
       } else {
-        // Modify existing project with context
         const updatedProject = await GroqService.modifyAppFiles(
           project,
           messageWithContext,
@@ -352,19 +327,24 @@ const AppGenerator: React.FC = () => {
     toast.info("Rebuilding your app...");
     
     try {
-      // Extract the most relevant user messages to build context
       const userMessages = messages.filter(msg => msg.sender === 'user');
       if (userMessages.length === 0) return;
       
-      // Use the last user message as the primary instruction
       const lastUserMessage = userMessages[userMessages.length - 1].content;
       
-      // Include conversation context for rebuilding
       const messageWithContext = getConversationContext(lastUserMessage);
       
-      // Generate a new app from scratch with context
       const generatedProject = await GroqService.generateAppFiles(messageWithContext, selectedModel);
-      setProject(generatedProject);
+      
+      const typeSafeProject: AppProject = {
+        ...generatedProject,
+        files: generatedProject.files.map(file => ({
+          ...file,
+          type: file.type as AppFileType
+        }))
+      };
+      
+      setProject(typeSafeProject);
       
       const responseMessage = addMessage("I've rebuilt your app from scratch. How does this version look?", 'assistant');
       toast.success("App rebuilt successfully!");
@@ -386,14 +366,21 @@ const AppGenerator: React.FC = () => {
       return;
     }
     
-    // Restore the messages and project state from the checkpoint
     setMessages(checkpoint.messages);
-    setProject(checkpoint.project);
+    
+    const typeSafeProject: AppProject = {
+      ...checkpoint.project,
+      files: checkpoint.project.files.map(file => ({
+        ...file,
+        type: file.type as AppFileType
+      }))
+    };
+    
+    setProject(typeSafeProject);
     toast.success("Restored to checkpoint");
   };
 
   const handleNewChat = () => {
-    // Clear the chat history but keep the welcome message
     const welcomeMessage: ChatMessage = {
       id: uuidv4(),
       content: "Welcome to the AI App Generator! I've added a sample app to get you started. You can edit the code directly or ask me to modify it. Try asking for a specific type of app or request changes to the current one!",
@@ -403,15 +390,15 @@ const AppGenerator: React.FC = () => {
     
     setMessages([welcomeMessage]);
     
-    // Reset to initial project
     setProject(initialProject);
     
-    // Reset checkpoints
+    const initialCheckpoint: CheckpointState = {
+      messages: [welcomeMessage],
+      project: initialProject
+    };
+    
     setCheckpoints({
-      [welcomeMessage.id]: {
-        messages: [welcomeMessage],
-        project: initialProject
-      }
+      [welcomeMessage.id]: initialCheckpoint
     });
     
     toast.success("Started a new app session");

@@ -1,8 +1,7 @@
-
 import React, { useState, useEffect } from 'react';
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
-import { AppFile, AppProject } from '@/types';
+import { AppFile, AppProject, AppFileType } from '@/types';
 import { CopyIcon, CheckIcon, PlayIcon, PlusIcon, TrashIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
@@ -20,16 +19,14 @@ const AppFileEditor: React.FC<AppFileEditorProps> = ({ project, onProjectChange,
   const [copied, setCopied] = useState(false);
   const [localProject, setLocalProject] = useState<AppProject>(project);
   const [newFileName, setNewFileName] = useState("");
-  const [newFileType, setNewFileType] = useState<AppFile["type"]>("js");
+  const [newFileType, setNewFileType] = useState<AppFileType>("js");
 
-  // Set active file to entry file on first load
   useEffect(() => {
     if (project.files.length > 0 && !activeFile) {
       setActiveFile(project.entryFile);
     }
   }, [project.files, activeFile, project.entryFile]);
 
-  // Update local state when props change
   useEffect(() => {
     setLocalProject(project);
   }, [project]);
@@ -47,7 +44,6 @@ const AppFileEditor: React.FC<AppFileEditorProps> = ({ project, onProjectChange,
     const updatedProject = { ...localProject, files: updatedFiles };
     setLocalProject(updatedProject);
     
-    // Notify parent component of changes
     if (onProjectChange) {
       onProjectChange(updatedProject);
     }
@@ -70,7 +66,6 @@ const AppFileEditor: React.FC<AppFileEditorProps> = ({ project, onProjectChange,
       return;
     }
     
-    // Check if file already exists
     if (localProject.files.some(file => file.name === newFileName)) {
       toast.error("A file with this name already exists");
       return;
@@ -91,7 +86,6 @@ const AppFileEditor: React.FC<AppFileEditorProps> = ({ project, onProjectChange,
     setActiveFile(newFileName);
     setNewFileName("");
     
-    // Notify parent component of changes
     if (onProjectChange) {
       onProjectChange(updatedProject);
     }
@@ -100,7 +94,6 @@ const AppFileEditor: React.FC<AppFileEditorProps> = ({ project, onProjectChange,
   };
 
   const handleDeleteFile = (fileName: string) => {
-    // Prevent deleting the entry file
     if (fileName === localProject.entryFile) {
       toast.error("Cannot delete the entry file");
       return;
@@ -108,7 +101,6 @@ const AppFileEditor: React.FC<AppFileEditorProps> = ({ project, onProjectChange,
     
     const updatedFiles = localProject.files.filter(file => file.name !== fileName);
     
-    // If we're deleting the active file, switch to the entry file
     if (activeFile === fileName) {
       setActiveFile(localProject.entryFile);
     }
@@ -116,7 +108,6 @@ const AppFileEditor: React.FC<AppFileEditorProps> = ({ project, onProjectChange,
     const updatedProject = { ...localProject, files: updatedFiles };
     setLocalProject(updatedProject);
     
-    // Notify parent component of changes
     if (onProjectChange) {
       onProjectChange(updatedProject);
     }
@@ -177,7 +168,7 @@ const AppFileEditor: React.FC<AppFileEditorProps> = ({ project, onProjectChange,
                 <div className="flex space-x-2">
                   <select
                     value={newFileType}
-                    onChange={(e) => setNewFileType(e.target.value as AppFile["type"])}
+                    onChange={(e) => setNewFileType(e.target.value as AppFileType)}
                     className="flex-1 text-sm h-8 rounded-md border border-input bg-background px-3"
                   >
                     <option value="js">JavaScript</option>

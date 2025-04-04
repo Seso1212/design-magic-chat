@@ -1,6 +1,5 @@
-
 import React, { useEffect, useRef, useState } from 'react';
-import { AppProject } from '@/types';
+import { AppProject, AppFileType } from '@/types';
 import { RefreshCw, Expand } from 'lucide-react';
 import { Button } from './ui/button';
 import { 
