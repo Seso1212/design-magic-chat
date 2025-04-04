@@ -336,15 +336,7 @@ const AppGenerator: React.FC = () => {
       
       const generatedProject = await GroqService.generateAppFiles(messageWithContext, selectedModel);
       
-      const typeSafeProject: AppProject = {
-        ...generatedProject,
-        files: generatedProject.files.map(file => ({
-          ...file,
-          type: file.type as AppFileType
-        }))
-      };
-      
-      setProject(typeSafeProject);
+      setProject(generatedProject);
       
       const responseMessage = addMessage("I've rebuilt your app from scratch. How does this version look?", 'assistant');
       toast.success("App rebuilt successfully!");
@@ -367,16 +359,7 @@ const AppGenerator: React.FC = () => {
     }
     
     setMessages(checkpoint.messages);
-    
-    const typeSafeProject: AppProject = {
-      ...checkpoint.project,
-      files: checkpoint.project.files.map(file => ({
-        ...file,
-        type: file.type as AppFileType
-      }))
-    };
-    
-    setProject(typeSafeProject);
+    setProject(checkpoint.project);
     toast.success("Restored to checkpoint");
   };
 
@@ -389,7 +372,6 @@ const AppGenerator: React.FC = () => {
     };
     
     setMessages([welcomeMessage]);
-    
     setProject(initialProject);
     
     const initialCheckpoint: CheckpointState = {

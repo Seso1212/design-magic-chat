@@ -1,4 +1,4 @@
-import { ChatCompletionRequest, ChatCompletionResponse, Message, AIModel, ProjectType, ElementDesign } from "@/types";
+import { ChatCompletionRequest, ChatCompletionResponse, Message, AIModel, ProjectType, ElementDesign, AppProject, AppFile, AppFileType } from "@/types";
 import { toast } from "sonner";
 
 export class GroqService {
@@ -451,11 +451,15 @@ Please provide the updated code for this element.`
         try {
           const parsedProject = JSON.parse(jsonString);
           
-          // Ensure all required fields exist
+          // Ensure all required fields exist and type safety
           return {
             name: parsedProject.name || "new-app",
             description: parsedProject.description || "Generated app",
-            files: parsedProject.files || [],
+            files: parsedProject.files.map((file: any) => ({
+              name: file.name,
+              content: file.content,
+              type: file.type as AppFileType // Cast to AppFileType
+            })) || [],
             entryFile: parsedProject.entryFile || (parsedProject.files[0]?.name || "index.js")
           };
         } catch (parseError) {
@@ -469,7 +473,7 @@ Please provide the updated code for this element.`
               {
                 name: "main.js",
                 content: "console.log('Error parsing JSON');",
-                type: "js"
+                type: "js" as AppFileType
               }
             ],
             entryFile: "main.js"
@@ -485,7 +489,7 @@ Please provide the updated code for this element.`
             {
               name: "main.js",
               content: "console.log('Error processing response');",
-              type: "js"
+              type: "js" as AppFileType
             }
           ],
           entryFile: "main.js"
@@ -501,7 +505,7 @@ Please provide the updated code for this element.`
           {
             name: "main.js",
             content: "console.log('Error calling AI service');",
-            type: "js"
+            type: "js" as AppFileType
           }
         ],
         entryFile: "main.js"
@@ -602,13 +606,19 @@ Please provide the updated code for this element.`
         try {
           const parsedProject = JSON.parse(jsonString);
           
-          // Merge with current project, only replacing fields that were provided
-          return {
+          // Ensure type safety for the project files
+          const typeSafeProject: AppProject = {
             name: parsedProject.name || currentProject.name,
             description: parsedProject.description || currentProject.description,
-            files: parsedProject.files || currentProject.files,
+            files: parsedProject.files ? parsedProject.files.map((file: any) => ({
+              name: file.name,
+              content: file.content,
+              type: file.type as AppFileType
+            })) : currentProject.files,
             entryFile: parsedProject.entryFile || currentProject.entryFile
           };
+          
+          return typeSafeProject;
         } catch (parseError) {
           console.error("JSON parse error:", parseError);
           console.log("Problematic JSON string:", jsonString);
@@ -626,11 +636,4 @@ Please provide the updated code for this element.`
       return currentProject;
     }
   }
-}
-
-interface AppProject {
-  name: string;
-  description: string;
-  entryFile: string;
-  files: { name: string, content: string, type: string }[];
 }
