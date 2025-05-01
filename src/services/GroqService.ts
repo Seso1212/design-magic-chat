@@ -3,7 +3,7 @@ import { toast } from "sonner";
 
 export class GroqService {
   private static readonly API_ENDPOINT = "https://api.groq.com/openai/v1/chat/completions";
-  private static readonly API_KEY = "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";
+  private static readonly API_KEY = "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";
   
   public static readonly AVAILABLE_MODELS: AIModel[] = [
     {
