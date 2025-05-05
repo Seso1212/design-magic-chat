@@ -1,3 +1,4 @@
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -7,40 +8,40 @@
     --background: 240 10% 3.9%; /* Dark background */
     --foreground: 0 0% 98%; /* Light text */
 
-    --card: 240 10% 3.9%; /* Dark card */
+    --card: 240 10% 5.9%; /* Slightly lighter dark card */
     --card-foreground: 0 0% 98%; /* Light card text */
 
-    --popover: 240 10% 3.9%; /* Dark popover */
+    --popover: 240 10% 5.9%; /* Dark popover */
     --popover-foreground: 0 0% 98%; /* Light popover text */
 
-    --primary: 0 0% 98%; /* White primary */
+    --primary: 265 89% 78%; /* Purple primary */
     --primary-foreground: 240 5.9% 10%; /* Dark primary text */
 
-    --secondary: 240 3.7% 15.9%; /* Dark secondary */
+    --secondary: 240 5% 10%; /* Dark secondary */
     --secondary-foreground: 0 0% 98%; /* Light secondary text */
 
-    --muted: 240 3.7% 15.9%; /* Dark muted */
+    --muted: 240 5% 15.9%; /* Dark muted */
     --muted-foreground: 240 5% 64.9%; /* Medium muted text */
 
-    --accent: 240 3.7% 15.9%; /* Dark accent */
-    --accent-foreground: 0 0% 98%; /* Light accent text */
+    --accent: 265 89% 78%; /* Purple accent */
+    --accent-foreground: 240 5.9% 10%; /* Dark accent text */
 
-    --destructive: 0 62.8% 30.6%; /* Dark red for errors */
+    --destructive: 0 62.8% 40.6%; /* Rich red for errors */
     --destructive-foreground: 0 0% 98%; /* Light text for errors */
 
-    --border: 240 3.7% 15.9%; /* Dark border */
-    --input: 240 3.7% 15.9%; /* Dark input */
-    --ring: 240 4.9% 83.9%; /* Light ring */
+    --border: 240 5% 15.9%; /* Dark border */
+    --input: 240 5% 15.9%; /* Dark input */
+    --ring: 265 89% 78%; /* Purple ring */
     --radius: 0.75rem; /* Keep the same radius */
 
     --sidebar-background: 240 10% 3.9%; /* Dark sidebar */
     --sidebar-foreground: 0 0% 98%; /* Light sidebar text */
-    --sidebar-primary: 0 0% 98%; /* White sidebar primary */
+    --sidebar-primary: 265 89% 78%; /* Purple sidebar primary */
     --sidebar-primary-foreground: 240 5.9% 10%; /* Dark sidebar primary text */
-    --sidebar-accent: 240 4.8% 15.9%; /* Dark sidebar accent */
+    --sidebar-accent: 240 5% 15.9%; /* Dark sidebar accent */
     --sidebar-accent-foreground: 0 0% 98%; /* Light sidebar accent text */
-    --sidebar-border: 240 3.7% 15.9%; /* Dark sidebar border */
-    --sidebar-ring: 240 4.9% 83.9%; /* Light sidebar ring */
+    --sidebar-border: 240 5% 15.9%; /* Dark sidebar border */
+    --sidebar-ring: 265 89% 78%; /* Purple sidebar ring */
   }
 
   * {
@@ -95,7 +96,7 @@
 
 @layer components {
   .designer-button {
-    @apply bg-white text-black font-medium px-5 py-2 rounded-full transition-all duration-300 hover:bg-opacity-90 active:scale-95 hover:shadow-md;
+    @apply bg-primary text-primary-foreground font-medium px-5 py-2 rounded-full transition-all duration-300 hover:bg-opacity-90 active:scale-95 hover:shadow-md;
   }
 
   .designer-card {
@@ -111,11 +112,11 @@
   }
   
   .code-tab.active {
-    @apply text-white border-b-2 border-white;
+    @apply text-white border-b-2 border-primary;
   }
 
   .modern-input {
-    @apply px-4 py-3 rounded-xl bg-secondary border border-border focus:ring-2 focus:ring-white focus:border-transparent transition-all duration-200;
+    @apply px-4 py-3 rounded-xl bg-secondary border border-border focus:ring-2 focus:ring-primary focus:border-transparent transition-all duration-200;
   }
 
   .modern-card {
@@ -123,6 +124,18 @@
   }
 
   .gradient-text {
-    @apply bg-clip-text text-transparent bg-gradient-to-br from-white via-white/80 to-white/60;
+    @apply bg-clip-text text-transparent bg-gradient-to-br from-primary via-primary/80 to-primary/60;
+  }
+
+  .neo-button {
+    @apply px-4 py-2 rounded-md bg-secondary border border-border hover:bg-muted transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-primary;
+  }
+
+  .glow-card {
+    @apply bg-secondary border border-primary/20 rounded-xl shadow-glow hover:border-primary/50 transition-all duration-300;
+  }
+
+  .glass-morphism {
+    @apply backdrop-blur-xl bg-white/5 border border-white/10 rounded-xl;
   }
 }

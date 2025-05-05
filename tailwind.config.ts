@@ -1,3 +1,4 @@
+
 import type { Config } from "tailwindcss";
 
 export default {
@@ -67,11 +68,11 @@ export default {
 					purple: '#8B5CF6',
 					'light-blue': '#e8f4fc',
 					'light-purple': '#E5DEFF',
-					gray: '#1a1a1a', // Darkened
+					gray: '#1a1a1a',
 					'dark-gray': '#333333',
-					'light-gray': '#2a2a2a', // Darkened
-					'off-white': '#121212', // Darkened for black theme
-					'glass': 'rgba(18, 18, 18, 0.8)' // Dark glass
+					'light-gray': '#2a2a2a',
+					'off-white': '#f5f5f7',
+					'glass': 'rgba(18, 18, 18, 0.8)'
 				}
 			},
 			borderRadius: {
@@ -102,6 +103,10 @@ export default {
 				'pulse-subtle': {
 					'0%, 100%': { opacity: '1' },
 					'50%': { opacity: '0.8' }
+				},
+				'glow': {
+					'0%, 100%': { boxShadow: '0 0 #fff' },
+					'50%': { boxShadow: '0 0 10px #8B5CF6' }
 				}
 			},
 			animation: {
@@ -109,18 +114,21 @@ export default {
 				'accordion-up': 'accordion-up 0.2s ease-out',
 				'fade-in': 'fade-in 0.3s ease-out',
 				'slide-up': 'slide-up 0.4s ease-out',
-				'pulse-subtle': 'pulse-subtle 2s cubic-bezier(0.4, 0, 0.6, 1) infinite'
+				'pulse-subtle': 'pulse-subtle 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+				'glow': 'glow 2s ease-in-out infinite'
 			},
 			backgroundImage: {
 				'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
 				'gradient-purple': 'linear-gradient(90deg, hsla(277, 75%, 84%, 1) 0%, hsla(297, 50%, 51%, 1) 100%)',
 				'gradient-blue': 'linear-gradient(90deg, hsla(221, 45%, 73%, 1) 0%, hsla(220, 78%, 29%, 1) 100%)',
-				'gradient-soft': 'linear-gradient(109.6deg, rgba(223,234,247,1) 11.2%, rgba(244,248,252,1) 91.1%)'
+				'gradient-soft': 'linear-gradient(109.6deg, rgba(223,234,247,1) 11.2%, rgba(244,248,252,1) 91.1%)',
+				'gradient-dark': 'linear-gradient(180deg, #121212 0%, #1a1a1a 100%)'
 			},
 			boxShadow: {
 				'glass': '0 8px 32px 0 rgba(31, 38, 135, 0.07)',
-				'card': '0 4px 12px rgba(0, 0, 0, 0.05)',
-				'card-hover': '0 8px 24px rgba(0, 0, 0, 0.08)'
+				'card': '0 4px 12px rgba(0, 0, 0, 0.15)',
+				'card-hover': '0 8px 24px rgba(0, 0, 0, 0.18)',
+				'glow': '0 0 15px rgba(139, 92, 246, 0.5)'
 			}
 		}
 	},
