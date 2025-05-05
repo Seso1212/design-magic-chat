@@ -3,35 +3,38 @@ import { toast } from "sonner";
 
 export class GroqService {
   private static readonly API_ENDPOINT = "https://api.groq.com/openai/v1/chat/completions";
-  private static readonly API_KEY = "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";
+  private static API_KEY = "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";
   
   public static readonly AVAILABLE_MODELS: AIModel[] = [
     {
-      id: "qwen-2.5-coder-32b",
-      name: "Qwen 2.5 Coder (32B)",
-      description: "Specialized model for coding tasks with enhanced programming capabilities"
-    },
-    {
       id: "llama3-8b-8192",
-      name: "Llama 3 (8B)",
-      description: "Efficient and versatile model for general-purpose tasks"
+      name: "Llama 3 8B",
+      description: "A compact and efficient model for straightforward tasks",
+      maxTokens: 8192
     },
     {
       id: "llama3-70b-8192",
-      name: "Llama 3 (70B)",
-      description: "High-capacity model with strong reasoning and generation capabilities"
+      name: "Llama 3 70B",
+      description: "A powerful model for complex reasoning and generation",
+      maxTokens: 8192
     },
     {
       id: "mixtral-8x7b-32768",
-      name: "Mixtral (8x7B)",
-      description: "Mixture of experts model with broad knowledge and long context window"
+      name: "Mixtral 8x7B",
+      description: "Specialized for technical and scientific content",
+      maxTokens: 32768
     },
     {
       id: "gemma-7b-it",
-      name: "Gemma (7B)",
-      description: "Lightweight model with good instruction-following abilities"
+      name: "Gemma 7B",
+      description: "Google's lightweight and efficient model",
+      maxTokens: 8192
     }
   ];
+
+  public static setApiKey(key: string): void {
+    this.API_KEY = key;
+  }
 
   public static getDefaultModel(): string {
     return this.AVAILABLE_MODELS[0].id;
