@@ -10,25 +10,29 @@ export class GroqService {
       id: "llama3-8b-8192",
       name: "Llama 3 8B",
       description: "A compact and efficient model for straightforward tasks",
-      maxTokens: 8192
+      maxTokens: 8192,
+      provider: "groq" as const
     },
     {
       id: "llama3-70b-8192",
       name: "Llama 3 70B",
       description: "A powerful model for complex reasoning and generation",
-      maxTokens: 8192
+      maxTokens: 8192,
+      provider: "groq" as const
     },
     {
       id: "mixtral-8x7b-32768",
       name: "Mixtral 8x7B",
       description: "Specialized for technical and scientific content",
-      maxTokens: 32768
+      maxTokens: 32768,
+      provider: "groq" as const
     },
     {
       id: "gemma-7b-it",
       name: "Gemma 7B",
       description: "Google's lightweight and efficient model",
-      maxTokens: 8192
+      maxTokens: 8192,
+      provider: "groq" as const
     }
   ];
 

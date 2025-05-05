@@ -5,8 +5,10 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { GroqService } from '@/services/GroqService';
+import { GeminiService } from '@/services/GeminiService';
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 interface ModelSelectorProps {
   selectedModel: string;
@@ -15,13 +17,18 @@ interface ModelSelectorProps {
 
 const ModelSelector: React.FC<ModelSelectorProps> = ({ selectedModel, onModelChange }) => {
   const [apiKey, setApiKey] = useState<string>("");
+  const [apiProvider, setApiProvider] = useState<"groq" | "gemini">("groq");
   const [isApiKeyPopoverOpen, setIsApiKeyPopoverOpen] = useState(false);
   const [customMode, setCustomMode] = useState(false);
   const [customModel, setCustomModel] = useState("");
 
   const handleApiKeySubmit = () => {
     if (apiKey.trim()) {
-      GroqService.setApiKey(apiKey.trim());
+      if (apiProvider === "groq") {
+        GroqService.setApiKey(apiKey.trim());
+      } else {
+        GeminiService.setApiKey(apiKey.trim());
+      }
       setIsApiKeyPopoverOpen(false);
     }
   };
@@ -37,12 +44,33 @@ const ModelSelector: React.FC<ModelSelectorProps> = ({ selectedModel, onModelCha
     setCustomMode(checked);
     if (!checked && selectedModel !== customModel) {
       // Switch back to predefined model
-      onModelChange(GroqService.getDefaultModel());
+      if (apiProvider === "groq") {
+        onModelChange(GroqService.getDefaultModel());
+      } else {
+        onModelChange(GeminiService.getDefaultModel());
+      }
     } else if (checked && customModel) {
       // Apply custom model if it exists
       onModelChange(customModel);
     }
   };
+
+  const handleProviderChange = (provider: "groq" | "gemini") => {
+    setApiProvider(provider);
+    setCustomMode(false);
+    onModelChange(provider === "groq" ? GroqService.getDefaultModel() : GeminiService.getDefaultModel());
+  };
+
+  // Combine models from both services
+  const allModels = [
+    ...GroqService.AVAILABLE_MODELS,
+    ...GeminiService.AVAILABLE_MODELS
+  ];
+
+  // Filter models based on selected provider
+  const availableModels = allModels.filter(model => 
+    model.provider === apiProvider || (!model.provider && apiProvider === "groq")
+  );
 
   return (
     <div className="w-full space-y-3">
@@ -60,14 +88,28 @@ const ModelSelector: React.FC<ModelSelectorProps> = ({ selectedModel, onModelCha
           </PopoverTrigger>
           <PopoverContent className="w-80">
             <div className="space-y-2">
-              <h4 className="font-medium text-sm">Groq API Key</h4>
-              <p className="text-xs text-muted-foreground">
-                Enter your Groq API key to use your own account.
-              </p>
+              <Tabs defaultValue="groq" onValueChange={(value) => setApiProvider(value as "groq" | "gemini")}>
+                <TabsList className="w-full">
+                  <TabsTrigger value="groq" className="flex-1">Groq</TabsTrigger>
+                  <TabsTrigger value="gemini" className="flex-1">Gemini</TabsTrigger>
+                </TabsList>
+                <TabsContent value="groq">
+                  <h4 className="font-medium text-sm">Groq API Key</h4>
+                  <p className="text-xs text-muted-foreground mb-2">
+                    Enter your Groq API key to use your own account.
+                  </p>
+                </TabsContent>
+                <TabsContent value="gemini">
+                  <h4 className="font-medium text-sm">Gemini API Key</h4>
+                  <p className="text-xs text-muted-foreground mb-2">
+                    Enter your Google Gemini API key to use your own account.
+                  </p>
+                </TabsContent>
+              </Tabs>
               <div className="flex gap-2">
                 <Input
                   type="password"
-                  placeholder="gsk_..."
+                  placeholder={apiProvider === "groq" ? "gsk_..." : "AIzaSy..."}
                   value={apiKey}
                   onChange={(e) => setApiKey(e.target.value)}
                   className="flex-1"
@@ -78,6 +120,13 @@ const ModelSelector: React.FC<ModelSelectorProps> = ({ selectedModel, onModelCha
           </PopoverContent>
         </Popover>
       </div>
+
+      <Tabs defaultValue="groq" onValueChange={(value) => handleProviderChange(value as "groq" | "gemini")} className="w-full">
+        <TabsList className="w-full mb-3">
+          <TabsTrigger value="groq" className="flex-1">Groq</TabsTrigger>
+          <TabsTrigger value="gemini" className="flex-1">Gemini</TabsTrigger>
+        </TabsList>
+      </Tabs>
 
       <div className="flex items-center space-x-2 mb-2">
         <Switch
@@ -90,7 +139,10 @@ const ModelSelector: React.FC<ModelSelectorProps> = ({ selectedModel, onModelCha
 
       {customMode ? (
         <Input
-          placeholder="Enter custom model ID (e.g., llama3-70b-8192)"
+          placeholder={apiProvider === "groq" ? 
+            "Enter custom Groq model ID (e.g., llama3-70b-8192)" : 
+            "Enter custom Gemini model ID (e.g., gemini-pro)"
+          }
           value={customModel}
           onChange={handleCustomModelChange}
           className="w-full"
@@ -101,7 +153,7 @@ const ModelSelector: React.FC<ModelSelectorProps> = ({ selectedModel, onModelCha
             <SelectValue placeholder="Select a model" />
           </SelectTrigger>
           <SelectContent className="bg-white">
-            {GroqService.AVAILABLE_MODELS.map(model => (
+            {availableModels.map(model => (
               <SelectItem 
                 key={model.id} 
                 value={model.id}

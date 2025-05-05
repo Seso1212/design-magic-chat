@@ -1,4 +1,3 @@
-
 export interface Message {
   role: "system" | "user" | "assistant";
   content: string;
@@ -9,6 +8,7 @@ export interface AIModel {
   name: string;
   description: string;
   maxTokens?: number;
+  provider?: "groq" | "gemini";
 }
 
 export type ProjectType = "html" | "react" | "python";
@@ -64,4 +64,23 @@ export interface AppProject {
   description: string;
   files: AppFile[];
   entryFile: string;
+}
+
+export interface GeminiContent {
+  parts: { text: string }[];
+}
+
+export interface GeminiRequest {
+  contents: GeminiContent[];
+  generationConfig?: {
+    temperature?: number;
+    maxOutputTokens?: number;
+  };
+}
+
+export interface GeminiResponse {
+  candidates: {
+    content: GeminiContent;
+    finishReason: string;
+  }[];
 }
