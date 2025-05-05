@@ -1,48 +1,46 @@
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    --background: 240 10% 3.9%; /* Dark background */
+    --foreground: 0 0% 98%; /* Light text */
 
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    --card: 240 10% 3.9%; /* Dark card */
+    --card-foreground: 0 0% 98%; /* Light card text */
 
-    --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
+    --popover: 240 10% 3.9%; /* Dark popover */
+    --popover-foreground: 0 0% 98%; /* Light popover text */
 
-    --primary: 266 100% 64%; /* Purple primary */
-    --primary-foreground: 210 40% 98%;
+    --primary: 0 0% 98%; /* White primary */
+    --primary-foreground: 240 5.9% 10%; /* Dark primary text */
 
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
+    --secondary: 240 3.7% 15.9%; /* Dark secondary */
+    --secondary-foreground: 0 0% 98%; /* Light secondary text */
 
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
+    --muted: 240 3.7% 15.9%; /* Dark muted */
+    --muted-foreground: 240 5% 64.9%; /* Medium muted text */
 
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
+    --accent: 240 3.7% 15.9%; /* Dark accent */
+    --accent-foreground: 0 0% 98%; /* Light accent text */
 
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive: 0 62.8% 30.6%; /* Dark red for errors */
+    --destructive-foreground: 0 0% 98%; /* Light text for errors */
 
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 221.2 83.2% 53.3%;
+    --border: 240 3.7% 15.9%; /* Dark border */
+    --input: 240 3.7% 15.9%; /* Dark input */
+    --ring: 240 4.9% 83.9%; /* Light ring */
+    --radius: 0.75rem; /* Keep the same radius */
 
-    --radius: 0.75rem; /* Slightly larger radius for modern look */
-
-    --sidebar-background: 0 0% 98%;
-    --sidebar-foreground: 240 5.3% 26.1%;
-    --sidebar-primary: 240 5.9% 10%;
-    --sidebar-primary-foreground: 0 0% 98%;
-    --sidebar-accent: 240 4.8% 95.9%;
-    --sidebar-accent-foreground: 240 5.9% 10%;
-    --sidebar-border: 220 13% 91%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --sidebar-background: 240 10% 3.9%; /* Dark sidebar */
+    --sidebar-foreground: 0 0% 98%; /* Light sidebar text */
+    --sidebar-primary: 0 0% 98%; /* White sidebar primary */
+    --sidebar-primary-foreground: 240 5.9% 10%; /* Dark sidebar primary text */
+    --sidebar-accent: 240 4.8% 15.9%; /* Dark sidebar accent */
+    --sidebar-accent-foreground: 0 0% 98%; /* Light sidebar accent text */
+    --sidebar-border: 240 3.7% 15.9%; /* Dark sidebar border */
+    --sidebar-ring: 240 4.9% 83.9%; /* Light sidebar ring */
   }
 
   * {
@@ -50,7 +48,7 @@
   }
 
   body {
-    @apply bg-designer-off-white text-foreground font-sans;
+    @apply bg-background text-foreground font-sans;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
@@ -97,34 +95,34 @@
 
 @layer components {
   .designer-button {
-    @apply bg-designer-purple text-white font-medium px-5 py-2 rounded-full transition-all duration-300 hover:bg-opacity-90 active:scale-95 hover:shadow-md;
+    @apply bg-white text-black font-medium px-5 py-2 rounded-full transition-all duration-300 hover:bg-opacity-90 active:scale-95 hover:shadow-md;
   }
 
   .designer-card {
-    @apply bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden hover:shadow-card-hover transition-shadow duration-300;
+    @apply bg-secondary border border-border rounded-2xl shadow-sm overflow-hidden hover:shadow-card-hover transition-shadow duration-300;
   }
 
   .glass-panel {
-    @apply bg-designer-glass backdrop-blur-md border border-white/30 rounded-2xl shadow-glass;
+    @apply bg-black/30 backdrop-blur-md border border-white/10 rounded-2xl shadow-glass;
   }
   
   .code-tab {
-    @apply px-4 py-2 font-medium transition-all duration-200 hover:text-designer-purple cursor-pointer;
+    @apply px-4 py-2 font-medium transition-all duration-200 hover:text-white cursor-pointer;
   }
   
   .code-tab.active {
-    @apply text-designer-purple border-b-2 border-designer-purple;
+    @apply text-white border-b-2 border-white;
   }
 
   .modern-input {
-    @apply px-4 py-3 rounded-xl bg-white border border-gray-200 focus:ring-2 focus:ring-designer-purple focus:border-transparent transition-all duration-200;
+    @apply px-4 py-3 rounded-xl bg-secondary border border-border focus:ring-2 focus:ring-white focus:border-transparent transition-all duration-200;
   }
 
   .modern-card {
-    @apply bg-white rounded-xl p-6 shadow-card border border-gray-100 hover:shadow-card-hover transition-all duration-300;
+    @apply bg-secondary rounded-xl p-6 shadow-card border border-border hover:shadow-card-hover transition-all duration-300;
   }
 
   .gradient-text {
-    @apply bg-clip-text text-transparent bg-gradient-purple;
+    @apply bg-clip-text text-transparent bg-gradient-to-br from-white via-white/80 to-white/60;
   }
 }

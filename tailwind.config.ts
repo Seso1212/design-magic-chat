@@ -1,4 +1,3 @@
-
 import type { Config } from "tailwindcss";
 
 export default {
@@ -68,11 +67,11 @@ export default {
 					purple: '#8B5CF6',
 					'light-blue': '#e8f4fc',
 					'light-purple': '#E5DEFF',
-					gray: '#f5f5f7',
+					gray: '#1a1a1a', // Darkened
 					'dark-gray': '#333333',
-					'light-gray': '#f1f1f1',
-					'off-white': '#fbfbfd',
-					'glass': 'rgba(255, 255, 255, 0.8)'
+					'light-gray': '#2a2a2a', // Darkened
+					'off-white': '#121212', // Darkened for black theme
+					'glass': 'rgba(18, 18, 18, 0.8)' // Dark glass
 				}
 			},
 			borderRadius: {
