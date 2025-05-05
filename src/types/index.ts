@@ -8,6 +8,7 @@ export interface AIModel {
   id: string;
   name: string;
   description: string;
+  maxTokens?: number;
 }
 
 export type ProjectType = "html" | "react" | "python";

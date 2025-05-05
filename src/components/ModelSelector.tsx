@@ -5,6 +5,8 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { GroqService } from '@/services/GroqService';
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 
 interface ModelSelectorProps {
   selectedModel: string;
@@ -14,6 +16,8 @@ interface ModelSelectorProps {
 const ModelSelector: React.FC<ModelSelectorProps> = ({ selectedModel, onModelChange }) => {
   const [apiKey, setApiKey] = useState<string>("");
   const [isApiKeyPopoverOpen, setIsApiKeyPopoverOpen] = useState(false);
+  const [customMode, setCustomMode] = useState(false);
+  const [customModel, setCustomModel] = useState("");
 
   const handleApiKeySubmit = () => {
     if (apiKey.trim()) {
@@ -22,8 +26,26 @@ const ModelSelector: React.FC<ModelSelectorProps> = ({ selectedModel, onModelCha
     }
   };
 
+  const handleCustomModelChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setCustomModel(e.target.value);
+    if (e.target.value.trim()) {
+      onModelChange(e.target.value.trim());
+    }
+  };
+
+  const toggleCustomMode = (checked: boolean) => {
+    setCustomMode(checked);
+    if (!checked && selectedModel !== customModel) {
+      // Switch back to predefined model
+      onModelChange(GroqService.getDefaultModel());
+    } else if (checked && customModel) {
+      // Apply custom model if it exists
+      onModelChange(customModel);
+    }
+  };
+
   return (
-    <div className="w-full">
+    <div className="w-full space-y-3">
       <div className="flex items-center justify-between mb-1">
         <div className="text-xs font-medium text-muted-foreground">AI Model</div>
         <Popover open={isApiKeyPopoverOpen} onOpenChange={setIsApiKeyPopoverOpen}>
@@ -56,25 +78,44 @@ const ModelSelector: React.FC<ModelSelectorProps> = ({ selectedModel, onModelCha
           </PopoverContent>
         </Popover>
       </div>
-      <Select value={selectedModel} onValueChange={onModelChange}>
-        <SelectTrigger className="w-full bg-white border border-gray-200 rounded-xl h-10">
-          <SelectValue placeholder="Select a model" />
-        </SelectTrigger>
-        <SelectContent className="bg-white">
-          {GroqService.AVAILABLE_MODELS.map(model => (
-            <SelectItem 
-              key={model.id} 
-              value={model.id}
-              className="cursor-pointer py-2.5 px-4 hover:bg-designer-light-blue transition-colors duration-200"
-            >
-              <div>
-                <div className="font-medium">{model.name}</div>
-                <div className="text-xs text-muted-foreground">{model.description}</div>
-              </div>
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
+
+      <div className="flex items-center space-x-2 mb-2">
+        <Switch
+          id="custom-model-mode"
+          checked={customMode}
+          onCheckedChange={toggleCustomMode}
+        />
+        <Label htmlFor="custom-model-mode">Use custom model</Label>
+      </div>
+
+      {customMode ? (
+        <Input
+          placeholder="Enter custom model ID (e.g., llama3-70b-8192)"
+          value={customModel}
+          onChange={handleCustomModelChange}
+          className="w-full"
+        />
+      ) : (
+        <Select value={selectedModel} onValueChange={onModelChange}>
+          <SelectTrigger className="w-full bg-white border border-gray-200 rounded-xl h-10">
+            <SelectValue placeholder="Select a model" />
+          </SelectTrigger>
+          <SelectContent className="bg-white">
+            {GroqService.AVAILABLE_MODELS.map(model => (
+              <SelectItem 
+                key={model.id} 
+                value={model.id}
+                className="cursor-pointer py-2.5 px-4 hover:bg-designer-light-blue transition-colors duration-200"
+              >
+                <div>
+                  <div className="font-medium">{model.name}</div>
+                  <div className="text-xs text-muted-foreground">{model.description}</div>
+                </div>
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      )}
     </div>
   );
 };
